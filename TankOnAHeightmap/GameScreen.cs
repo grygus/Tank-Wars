@@ -6,6 +6,7 @@ using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using TanksOnAHeightmap.GameBase.Cameras;
 using TanksOnAHeightmap.GameLogic;
 using TanksOnAHeightmap.Helpers;
 using TanksOnAHeightmap.Helpers.Drawing;
@@ -38,6 +39,8 @@ namespace TanksOnAHeightmap
         bool isDragging;
         InputHelper inputHelper;
 
+        protected ChaseCamera camera;
+
         public GameScreen(Game game, Player player)
             : base(game)
         {
@@ -48,8 +51,8 @@ namespace TanksOnAHeightmap
         public override void Initialize()
         {
             // Frame counter
-            inputHelper = Game.Services.GetService(typeof(InputHelper)) as InputHelper;
-           
+            inputHelper  = Game.Services.GetService(typeof(InputHelper)) as InputHelper;
+            camera       = Game.Services.GetService(typeof(ChaseCamera)) as ChaseCamera;
             frameCounter = new FrameCounterHelper(Game);
 
             base.Initialize();
@@ -189,6 +192,7 @@ namespace TanksOnAHeightmap
             KeyboardState currentKeyboardState, HeightMapInfo heightMapInfo)
         {
 
+            
             float changeAmount = 0;
             
             if (inputHelper.IsKeyJustPressed(Keys.Up))
@@ -204,7 +208,10 @@ namespace TanksOnAHeightmap
             }
 
             MouseState touchState = Mouse.GetState();
-            
+            if (touchState.LeftButton == ButtonState.Pressed)
+            {
+                Enemy chosenEnemy = ChooseEnemy(camera.Projection, camera.View, touchState);
+            }
             // Interpert touch screen presses - get only the first one for this specific case
             if (touchState.LeftButton == ButtonState.Pressed && isDragging == false)
             {
@@ -279,6 +286,50 @@ namespace TanksOnAHeightmap
                 default:
                     break;
             }
+        }
+
+        private Enemy ChooseEnemy(Matrix projectction, Matrix view, MouseState state)
+        {
+            int mouseX = state.X;
+            int mouseY = state.Y;
+
+            Vector3 nearsource = new Vector3((float)mouseX, (float)mouseY, 0f);
+            Vector3 farsource = new Vector3((float)mouseX, (float)mouseY, 1f);
+
+            Matrix world = Matrix.CreateTranslation(0, 0, 0);
+
+            Vector3 nearPoint = GraphicsDevice.Viewport.Unproject(nearsource, projectction, view, world);
+            
+            Vector3 farPoint = GraphicsDevice.Viewport.Unproject(farsource, projectction, view, world);
+
+            // Create a ray from the near clip plane to the far clip plane.
+            Vector3 direction = farPoint - nearPoint;
+            direction.Normalize();
+            Ray pickRay = new Ray(nearPoint, direction);
+
+
+            int selectedIndex;
+            float selectedDistance = float.MaxValue;
+            Enemy chosen = null;
+            for(int i = 0; i < Enemy.Units.Length; i += 1 )
+            {
+                BoundingSphere sphere = Enemy.Units[i].tank.BoundingSphere;
+                sphere.Center = Enemy.Units[i].Transformation.Translation;
+                Nullable<float> result = pickRay.Intersects(sphere);
+                if (result.HasValue)
+                {
+                    if (result.Value < selectedDistance)
+                    {
+                        selectedIndex = i;
+                        selectedDistance = result.Value;
+                        chosen = Enemy.Units[i];
+                        Enemy.Select(i);
+                    }
+                }
+
+
+            }
+            return chosen;
         }
     }
 }
