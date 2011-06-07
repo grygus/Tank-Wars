@@ -66,7 +66,7 @@ namespace TanksOnAHeightmap
         // Random number generator for the fire effect.
         Random random = new Random();
 
-        const int NUMBER_OF_ENEMYS = 1;
+        const int NUMBER_OF_ENEMYS = 2;
         const int NUMBER_OF_TREES = 1;
         #endregion
 
@@ -228,6 +228,8 @@ namespace TanksOnAHeightmap
                 //badGuys[i].DrawOrder = 102;
                 Components.Add(badGuys[i]);
             }
+            Enemy.Units = badGuys;
+            Enemy.DEBUG_ENEMY = true;
             player.EnemyList = badGuys;
 
 

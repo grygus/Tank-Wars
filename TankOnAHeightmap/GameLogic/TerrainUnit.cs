@@ -30,6 +30,7 @@ namespace TanksOnAHeightmap.GameLogic
         public Physics phisics;
         public Tank tank;
         protected Terrain terrain;
+        private Color boundingColor;
 
         #region AI
 
@@ -152,7 +153,7 @@ namespace TanksOnAHeightmap.GameLogic
             IsDead = false;
             needUpdateCollision = true;
             boost = false;
-
+            boundingColor = Color.Black;
             tank = new Tank(game, content, graphics);
 
             part1 = new DustParticleSystem(game, content);
@@ -251,12 +252,21 @@ namespace TanksOnAHeightmap.GameLogic
             //Transformation = tmp;
         }
 
+        public void  SetBoundingSphereColor(Color color)
+        {
+            boundingColor = color;
+        }
+
         public override void Draw(GameTime time)
         {
             tank.setOnGround(terrain.MapInfo);
             tank.Draw(time);
             part1.SetCamera(camera.View, camera.Projection);
             part1.Draw(time);
+
+            
+
+            
 
             if (DEBUG_MODE)
             {
