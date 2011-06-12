@@ -299,10 +299,15 @@ namespace TanksOnAHeightmap
         {
             // next, we'll create a rotation matrix from the direction the tank is 
             // facing, and use it to transform the vector.
-            orientation = Matrix.CreateRotationY(facingDirection);
-            Vector3 velocity = Vector3.Transform(movement, orientation);
-            velocity *= Velocity;
 
+            Matrix tmpOrientation = Matrix.CreateRotationY(facingDirection*0.05f);
+            Vector3 velocity = Vector3.Transform(movement, tmpOrientation);
+            
+            velocity = Vector3.Transform(movement, Orientation);
+            velocity *= Velocity;
+            tmpOrientation *= Orientation;
+            Orientation = tmpOrientation;
+            
             // Now we know how much the user wants to move. We'll construct a temporary
             // vector, newPosition, which will represent where the user wants to go. If
             // that value is on the heightmap, we'll allow the move.
@@ -314,7 +319,6 @@ namespace TanksOnAHeightmap
                 Vector3 normal;
                 heightMapInfo.GetHeightAndNormal(newPosition,
                     out newPosition.Y, out normal);
-
 
                 // As discussed in the doc, we'll use the normal of the heightmap
                 // and our desired forward direction to recalculate our orientation

@@ -136,7 +136,7 @@ namespace TanksOnAHeightmap
         /// <param name="gameTime">Time since last frame.</param>
         public override void Draw(GameTime gameTime)
         {
-
+            base.Draw(gameTime);
             Matrix scaling = Matrix.CreateScale(1.5f);
             Matrix worldMatrix = scaling * GraphicsTransform * body.WorldTransform;
             
@@ -160,7 +160,7 @@ namespace TanksOnAHeightmap
                         mesh.Draw();
                     }              
          
-            base.Draw(gameTime);
+           
         }
 
         /// <summary>

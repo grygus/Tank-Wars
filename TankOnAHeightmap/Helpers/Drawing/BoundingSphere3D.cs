@@ -142,6 +142,76 @@ namespace TanksOnAHeightmap.Helpers.Drawing
             }
 
         }
+
+        public void DrawWheel(Vector3 center,int radius, Color color, Matrix? World = null)
+        {
+            GraphicsDevice device = graphicsDevice;
+
+
+            Matrix scaleMatrix = Matrix.CreateScale(radius);
+            Matrix translateMat;
+            if (World != null)
+            {
+                translateMat = ((Matrix)World);
+            }
+            else
+            {
+                translateMat = Matrix.CreateTranslation(center);
+            }
+
+            Matrix rotateYMatrix = Matrix.CreateRotationY(RADIANS_FOR_90DEGREES);
+            Matrix rotateXMatrix = Matrix.CreateRotationX(RADIANS_FOR_90DEGREES);
+
+
+            // Initialize an array of indices of type short
+            short[] lineStripIndices = new short[CIRCLE_NUM_POINTS * 3];
+
+            // Populate the array with references to indices in the vertex buffer
+            for (int i = 0, j = 0; i < CIRCLE_NUM_POINTS; i++,j += 3)
+            {
+                lineStripIndices[j] = 0;
+                lineStripIndices[j+1] = (short)(i + 1);
+                lineStripIndices[j+2] = (short) (i + 2);
+            }
+
+            lineStripIndices[CIRCLE_NUM_POINTS * 3 - 1] = 1;
+
+            IndexBuffer buff = new IndexBuffer(graphicsDevice, IndexElementSize.SixteenBits, lineStripIndices.Length,
+                BufferUsage.None);
+
+
+            // Set the data in the index buffer to our array
+            buff.SetData<short>(lineStripIndices);
+
+
+            //basicEffect.EnableDefaultLighting();
+            basicEffect.View = Renderer.camera.View;
+            basicEffect.Projection = Renderer.camera.Projection;
+
+            foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                device.SetVertexBuffer(buffer);
+                device.Indices = buff;
+
+                basicEffect.Alpha = 0.25f;//((float)color.A / (float)byte.MaxValue);
+                
+                basicEffect.World = rotateXMatrix * scaleMatrix * translateMat;
+                basicEffect.DiffuseColor = color.ToVector3() * 0.5f;
+                //basicEffect.CommitChanges();
+                pass.Apply();
+                device.DrawIndexedPrimitives(
+                    PrimitiveType.TriangleList,
+                    0,  // vertex buffer offset to add to each element of the index buffer
+                    0,  // minimum vertex index
+                    CIRCLE_NUM_POINTS + 1, // number of vertices. If this gets an exception for you try changing it to 0.  Seems to work just as well.
+                    0,  // first index element to read
+                    CIRCLE_NUM_POINTS); // number of primitives to draw
+
+            }
+
+        }
+
         public void Draw(BoundingSphere bs, Color color, Matrix? World = null)
         {
             

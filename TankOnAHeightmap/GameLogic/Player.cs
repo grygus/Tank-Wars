@@ -138,7 +138,7 @@ namespace TanksOnAHeightmap.GameLogic
 		public void HandleInput(GamePadState currentGamePadState,
 			KeyboardState currentKeyboardState, HeightMapInfo heightMapInfo)
 		{
-
+            
 			// First, we want to check to see if the tank should turn. turnAmount will 
 			// be an accumulation of all the different possible inputs.
 			float turnAmount = -currentGamePadState.ThumbSticks.Left.X;
@@ -220,11 +220,35 @@ namespace TanksOnAHeightmap.GameLogic
 			{
 				shot = false;
 			}*/
+            if (currentKeyboardState.IsKeyDown(Keys.M))
+            {
+                if (enemyList[0] != null)
+                {
+                    float radians = MathHelper.ToDegrees(enemyList[0].FuzzyBrain.DecideDirection(tank.WorldMatrix,
+                        enemyList[0].Transformation.Translation, enemyList[0].healthManager.Health.Position, WorldTrees[0].Position));
+                    if (radians < 0)
+                        radians = -180 - radians;
+                    else if(radians > 0)
+                        radians = 180 - radians;
 
 
+                    Matrix rot = Matrix.CreateRotationY(MathHelper.ToRadians(-radians));
+                    
+                    tank.Move(MathHelper.ToRadians(-radians),new Vector3(0,0,-1),heightMapInfo);
+                    
+
+                }
+            }
+            else
+            {
+                MovePlayer(currentGamePadState, currentKeyboardState, heightMapInfo);
+            }
 			//tank.Move(facingDirection, movement, heightMapInfo,SteeringForce);
-			MovePlayer(currentGamePadState, currentKeyboardState, heightMapInfo);
+			
 		}
+
+	    
+
 		public override void Update(GameTime time)
 		{
 			float elapsedTimeSeconds = (float)time.ElapsedGameTime.TotalSeconds;
@@ -294,34 +318,43 @@ namespace TanksOnAHeightmap.GameLogic
 
 		public override void Draw(GameTime time)
 		{
-
-			Renderer.BoundingSphere3D.DrawCircle(tank.BoundingSphere, 
+			base.Draw(time);
+			//TODO: Check why this canno be draw in Enemy class
+			/*Renderer.BoundingSphere3D.DrawCircle(tank.BoundingSphere, 
 													Color.Black,
 													Transformation*Matrix.CreateTranslation(new Vector3(0,25,0)));
+			Renderer.BoundingSphere3D.DrawCircle(tank.BoundingSphere,
+													Color.Black,
+													 Matrix.CreateRotationX(MathHelper.ToRadians(90)) * tank.WorldMatrix * Matrix.CreateTranslation(new Vector3(0, 25, 0))
+													);
+			Renderer.BoundingSphere3D.DrawCircle(tank.BoundingSphere,
+													Color.Black,
+													Matrix.CreateRotationZ(MathHelper.ToRadians(90)) * tank.WorldMatrix * Matrix.CreateTranslation(new Vector3(0, 25, 0))
+													);*/
 
+			
+			Renderer.BoundingSphere3D.DrawCircle(new BoundingSphere(new Vector3(0, 0, 0), 1200),
+													Color.Blue,
+													Transformation * Matrix.CreateTranslation(new Vector3(0, 25, 0)));
 
-            Renderer.BoundingSphere3D.DrawCircle(new BoundingSphere(new Vector3(0, 0, 0), 1200),
-                                                    Color.Blue,
-                                                    Transformation * Matrix.CreateTranslation(new Vector3(0, 25, 0)));
+			Renderer.BoundingSphere3D.DrawCircle(new BoundingSphere(new Vector3(0, 0, 0), 600),
+													Color.Red,
+													Transformation * Matrix.CreateTranslation(new Vector3(0, 25, 0)));
+			
+			if (enemyList[0] != null)
+			{ 
+				float radians = MathHelper.ToDegrees(enemyList[0].FuzzyBrain.DecideDirection(tank.WorldMatrix,
+					enemyList[0].Transformation.Translation,enemyList[0].healthManager.Health.Position,WorldTrees[0].Position));
+				if (radians < 0)
+					radians = -180 - radians;
+				else
+					radians = 180 - radians;
+			
 
-            Renderer.BoundingSphere3D.DrawCircle(new BoundingSphere(new Vector3(0, 0, 0), 600),
-                                                    Color.Red,
-                                                    Transformation * Matrix.CreateTranslation(new Vector3(0, 25, 0)));
-            
-            if (enemyList[0] != null)
-            { 
-                float radians = MathHelper.ToDegrees(enemyList[0].FuzzyBrain.DecideDirection(tank.WorldMatrix,
-                    enemyList[0].Transformation.Translation,enemyList[0].healthManager.Health.Position,WorldTrees[0].Position));
-                if (radians < 0)
-                    radians = -180 - radians;
-                else
-                    radians = 180 - radians;
-            
-
-            Matrix rot = Matrix.CreateRotationY(MathHelper.ToRadians(-radians));
-            Renderer.Line3D.Draw(new Vector3(0,50,0), new Vector3(0, 50, -200), Color.Red,rot*tank.WorldMatrix);
-            }
-            base.Draw(time);
+			Matrix rot = Matrix.CreateRotationY(MathHelper.ToRadians(-radians));
+			Renderer.Line3D.Draw(new Vector3(0,50,0), new Vector3(0, 50, -200), Color.Red,rot*tank.WorldMatrix);
+			}
+			
 		}
 
 		public void MovePlayer(GamePadState currentGamePadState,

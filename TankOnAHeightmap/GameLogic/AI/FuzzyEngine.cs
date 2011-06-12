@@ -21,7 +21,7 @@ namespace TanksOnAHeightmap.GameLogic.AI
         float prayPrior   = 1.0f;
         float healthPrior = 1.0f;
 
-        static public float FuzzyEnemyWeight
+        public float FuzzyEnemyWeight
         {
             get { return _fuzzyEnemyWeight; }
             set
@@ -29,9 +29,9 @@ namespace TanksOnAHeightmap.GameLogic.AI
                 _fuzzyEnemyWeight = MathHelper.Clamp(value, 0, 1);
             }
         }
-        static float _fuzzyEnemyWeight = .5f;
+        float _fuzzyEnemyWeight = .5f;
 
-        static public float FuzzyPreyWeight
+        public float FuzzyPreyWeight
         {
             get { return _fuzzyPreyWeight; }
             set
@@ -39,9 +39,9 @@ namespace TanksOnAHeightmap.GameLogic.AI
                 _fuzzyPreyWeight = MathHelper.Clamp(value, 0, 1);
             }
         }
-        static float _fuzzyPreyWeight = .5f;
+        float _fuzzyPreyWeight = .5f;
 
-        static public float FuzzyHealthWeight
+        public float FuzzyHealthWeight
         {
             get { return _fuzzyHealthWeight; }
             set
@@ -49,10 +49,15 @@ namespace TanksOnAHeightmap.GameLogic.AI
                 _fuzzyHealthWeight = MathHelper.Clamp(value, 0, 1);
             }
         }
-        static float _fuzzyHealthWeight = .5f;
+        float _fuzzyHealthWeight = .5f;
 
         //BMK dict
-        public Dictionary<string, float> FuzzyParameters { get; set; }
+        public Dictionary<string, float> FuzzyParameters
+        {
+            get { return fuzzyParameters; }
+            set { fuzzyParameters = value; }
+        }
+        public Dictionary<string, float> fuzzyParameters { get; set; }
 
         #region Fuzzy Logic
         float Owa(List<float> rules, List<float> weights)

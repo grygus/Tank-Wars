@@ -103,7 +103,7 @@ namespace TanksOnAHeightmap.GameBase.Physics
             EnemyCannonBall.game = game;
 
             game.Components.Add(CannonBallManager);
-
+            CannonBallManager.DrawOrder = 102;
             // adding walls // Content.Load<Model>("Models/detectorMiddleOuter")
             for (int i = 0; i < 1001; i = i + 200)
             {
@@ -119,12 +119,15 @@ namespace TanksOnAHeightmap.GameBase.Physics
                 WallStreet[i].DrawOrder = 102;
             }
 
-            for (int i = 0; i < HardWallStreet.Count; i++)
-                game.Components.Add(HardWallStreet[i]);
+            
 
             HardWallStreet.Add(new HardWall(game, space, Matrix.Identity, Matrix.CreateTranslation(new Vector3(-1710, -360, 310)), 1, 5, 24, 200, 24));
             HardWallStreet.Add(new HardWall(game, space, Matrix.Identity, Matrix.CreateTranslation(new Vector3(-1710, -360, 190)), 1, 5, 24, 200, 24));
-
+            for (int i = 0; i < HardWallStreet.Count; i++)
+            {
+                game.Components.Add(HardWallStreet[i]);
+                HardWallStreet[i].DrawOrder = 102;
+            }
            // Components.Add(new Wall(game, space, Matrix.Identity, Matrix.CreateTranslation(new Vector3(10, -350, -360)) * Matrix.CreateRotationY(1.57f), 5, 5, 121, 37, 10));
                                                     // Position                     // entity offset                 // entity size
             Building church = new Building(game, space, new Vector3(-2100, -40, 250), new Box( new Vector3(-70, -210, 0), 685, 400, 365),15f);
@@ -141,7 +144,7 @@ namespace TanksOnAHeightmap.GameBase.Physics
 
             healthManager.Health = new Health(game, space, new Vector3(-100, 0, -170));
             Components.Add(healthManager.Health);
-
+            healthManager.Health.DrawOrder = 102;
             // Border
            Model BorderCube;
            BorderCube = Content.Load<Model>("Models/border");
@@ -157,7 +160,8 @@ namespace TanksOnAHeightmap.GameBase.Physics
                 entity.Tag = model1;
                 space.Add(entity);
                 game.Components.Add(model1);
-            }
+                model1.DrawOrder = 102;
+           }
            for (int i = -3600; i < 3601; i += 7200)
            {
                entity = new Box(new Vector3(i, -380, 0), 10, 450, 7200);
@@ -167,6 +171,7 @@ namespace TanksOnAHeightmap.GameBase.Physics
                EntityModel model1 = new EntityModel(entity, BorderCube, scaling, game);
                space.Add(entity);
                game.Components.Add(model1);
+               model1.DrawOrder = 102;
            }
            
             

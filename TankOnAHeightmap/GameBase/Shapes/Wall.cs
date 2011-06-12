@@ -245,7 +245,8 @@ namespace TanksOnAHeightmap
         /// </summary>
         /// <param name="gameTime">Time since last frame.</param>
         public override void Draw(GameTime gameTime)
-        {           
+        {
+            base.Draw(gameTime);
             foreach (Box block in blocks)
             {
                 Matrix scaling = Matrix.CreateScale(0.025f);
@@ -279,7 +280,7 @@ namespace TanksOnAHeightmap
 
             //Renderer.BoundingBox3D.Draw(boundingBox, Color.Black, null);
            //Renderer.Line3D.Draw(boundingBox.Max, boundingBox.Max + Normal()*40, Color.Black, null);
-            base.Draw(gameTime);
+            
         }
 
         /// <summary>

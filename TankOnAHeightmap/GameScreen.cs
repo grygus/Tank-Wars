@@ -1,59 +1,50 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using TanksOnAHeightmap.GameBase.Cameras;
+using TanksOnAHeightmap.GameBase.Helpers;
 using TanksOnAHeightmap.GameLogic;
 using TanksOnAHeightmap.Helpers;
 using TanksOnAHeightmap.Helpers.Drawing;
-using Microsoft.Xna.Framework.Input.Touch;
-using TanksOnAHeightmap.GameBase.Helpers;
-
 
 namespace TanksOnAHeightmap
 {
-    class GameScreen : DrawableGameComponent
+    internal sealed class GameScreen : DrawableGameComponent
     {
         // Text
-        SpriteBatch spriteBatch;
-        SpriteFont spriteFont;
-        SpriteFont hudFont;
 
-        Player player;
+        private readonly Player _player;
+        private ChaseCamera _camera;
 
         // Frame counter helper
-        FrameCounterHelper frameCounter;
+        private Rectangle _barEnemy = new Rectangle(125, 145, 85, 40);
+        private Rectangle _barHealth = new Rectangle(125, 305, 85, 40);
+        private Rectangle _barPrey = new Rectangle(125, 225, 85, 40);
+        private int _currentlySelectedWeight;
+        private FrameCounterHelper _frameCounter;
+        private SpriteFont _hudFont;
 
-        //Bars
-        int currentlySelectedWeight;
-        Rectangle barEnemy = new Rectangle(125, 145, 85, 40);
-        Rectangle barPrey = new Rectangle(125, 225, 85, 40);
-        Rectangle barHealth = new Rectangle(125, 305, 85, 40);
-        
 
-        Vector2 lastTouchPoint;
-        bool isDragging;
-        InputHelper inputHelper;
-
-        protected ChaseCamera camera;
+        private InputHelper _inputHelper;
+        private bool _isDragging;
+        private Vector2 _lastTouchPoint;
+        private SpriteBatch _spriteBatch;
+        private SpriteFont _spriteFont;
 
         public GameScreen(Game game, Player player)
             : base(game)
         {
-            this.player = player;
-            this.DrawOrder = 999;
+            _player = player;
+            DrawOrder = 999;
         }
 
         public override void Initialize()
         {
             // Frame counter
-            inputHelper  = Game.Services.GetService(typeof(InputHelper)) as InputHelper;
-            camera       = Game.Services.GetService(typeof(ChaseCamera)) as ChaseCamera;
-            frameCounter = new FrameCounterHelper(Game);
+            _inputHelper = Game.Services.GetService(typeof (InputHelper)) as InputHelper;
+            _camera = Game.Services.GetService(typeof (ChaseCamera)) as ChaseCamera;
+            _frameCounter = new FrameCounterHelper(Game);
 
             base.Initialize();
         }
@@ -61,199 +52,163 @@ namespace TanksOnAHeightmap
         protected override void LoadContent()
         {
             // Create SpriteBatch and add services
-            spriteBatch = new SpriteBatch(GraphicsDevice);
+            _spriteBatch = new SpriteBatch(GraphicsDevice);
 
             // Font 2D
-            spriteFont = Game.Content.Load<SpriteFont>(GameAssetsPath.FONTS_PATH +
-                "BerlinSans");
-            hudFont = Game.Content.Load<SpriteFont>("hudFont");
-            
+            _spriteFont = Game.Content.Load<SpriteFont>(GameAssetsPath.FONTS_PATH + "BerlinSans");
+            _hudFont = Game.Content.Load<SpriteFont>("hudFont");
+
             base.LoadContent();
         }
 
-        protected override void UnloadContent()
+        #region Drawing
+        private void DrawHud()
         {
-            base.UnloadContent();
-        }
-
-        public override void Update(GameTime gameTime)
-        {
-            // Restart game
-            // gameLevel = LevelCreator.CreateLevel(Game, currentLevel);
-
-            
-            // Update player
-            //gameLevel.Player.Update(gameTime);
-            //UpdateWeaponTarget();
-
-            // Update camera
-            //BaseCamera activeCamera = gameLevel.CameraManager.ActiveCamera;
-            //activeCamera.Update(gameTime);
-
-            // Update light position
-            //PointLight cameraLight = gameLevel.LightManager["CameraLight"] as PointLight;
-            //cameraLight.Position = activeCamera.Position;
-
-            // Update enemies
-            /*foreach (Enemy enemy in gameLevel.EnemyList)
-            {
-                if (enemy.BoundingSphere.Intersects(activeCamera.Frustum) ||
-                    enemy.State == Enemy.EnemyState.ChasePlayer ||
-                    enemy.State == Enemy.EnemyState.AttackPlayer)
-
-                    enemy.Update(gameTime);
-
-            }*/
-
-            // Update scene objects
-            //gameLevel.SkyDome.Update(gameTime);
-            //gameLevel.Terrain.Update(gameTime);
-
-            base.Update(gameTime);
+            _spriteBatch.DrawString(_spriteFont
+                                    , "Health: " + _player.Life + "/" + _player.MaxLife
+                                    , new Vector2(10, 5)
+                                    , Color.White
+                );
+            _spriteBatch.DrawString(_spriteFont
+                                    , "Enemies Alive: " + _player.NumEnemiesAlive + "/" + _player.EnemyList.Length
+                                    , new Vector2(10, 45)
+                                    , Color.White
+                );
+            if (_player.AimEnemy != null)
+                _spriteBatch.DrawString(_spriteFont
+                                        , "Enemy Life: " + _player.AimEnemy.Life
+                                        , new Vector2(Game.GraphicsDevice.Viewport.Width/2.0f, 10)
+                                        , Color.White
+                    );
+            _spriteBatch.DrawString(_spriteFont
+                                    , "FPS: " + _frameCounter.LastFrameFps
+                                    , new Vector2(10, 75)
+                                    , Color.Red
+                );
         }
 
         public override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(ClearOptions.DepthBuffer, Color.White, 1.0f, 255);
-            
-            //BaseCamera activeCamera = gameLevel.CameraManager.ActiveCamera;
+            _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
 
-            //gameLevel.SkyDome.Draw(gameTime);
-            //gameLevel.Terrain.Draw(gameTime);
-            //gameLevel.Player.Draw(gameTime);
-
-            // Draw enemies
-            /*foreach (Enemy enemy in gameLevel.EnemyList)
+            // Draw GAME OVER message
+            if (_player.IsDead || _player.NumEnemiesAlive == 0)
             {
-                if (enemy.BoundingSphere.Intersects(activeCamera.Frustum))
-                    enemy.Draw(gameTime);
-            }*/
-
-            spriteBatch.Begin( SpriteSortMode.Deferred,BlendState.AlphaBlend);
-            if (player.IsDead || player.NumEnemiesAlive == 0)
-            {
-                spriteBatch.DrawString(spriteFont, "GAME OVER", new Vector2(320, 320), Color.White);
-
-                spriteBatch.DrawString(spriteFont, "Press R to restart", new Vector2(320, 220), Color.White);
+                _spriteBatch.DrawString(_spriteFont, "GAME OVER", new Vector2(320, 320), Color.White);
+                _spriteBatch.DrawString(_spriteFont, "Press R to restart", new Vector2(320, 220), Color.White);
             }
-            // Project weapon target
-            //weaponTargetPosition = GraphicsDevice.Viewport.Project(weaponTargetPosition,
-            //    activeCamera.Projection, activeCamera.View, Matrix.Identity);
+            else
+            {
+                DrawHud();
 
-            // Draw weapon target
-            /*int weaponRectangleSize = GraphicsDevice.Viewport.Width / 40;
-            if (activeCamera == gameLevel.CameraManager["FPSCamera"])
-                spriteBatch.Draw(weaponTargetTexture, new Rectangle(
-                    (int)(weaponTargetPosition.X - weaponRectangleSize * 0.5f),
-                    (int)(weaponTargetPosition.Y - weaponRectangleSize * 0.5f),
-                    weaponRectangleSize, weaponRectangleSize),
-                    (aimEnemy == null) ? Color.White : Color.Red);*/
-
-            // Draw GUI text
-            spriteBatch.DrawString(spriteFont, "Health: " + player.Life + "/" +
-                player.MaxLife, new Vector2(10, 5), Color.White);
-            //spriteBatch.DrawString(spriteFont, "Bullets: " + gameLevel.Player.Weapon.BulletsCount + "/" +
-                //gameLevel.Player.Weapon.MaxBullets, new Vector2(10, 25), Color.Green);
-            spriteBatch.DrawString(spriteFont, "Enemies Alive: "  + player.NumEnemiesAlive + "/" +
-                player.EnemyList.Length, new Vector2(10, 45), Color.White);
-
-            if(player.AimEnemy != null)
-                spriteBatch.DrawString(spriteFont, "Enemy Life: " + player.AimEnemy.Life, 
-                    new Vector2(base.Game.GraphicsDevice.Viewport.Width/2.0f, 10), Color.White);
-                
-
-            spriteBatch.DrawString(spriteFont, "FPS: " + frameCounter.LastFrameFps, new Vector2(10, 75),
-                Color.Red);
-            //Renderer.Bar2D.Draw(new Rectangle(20, 80, 100, 100), 1f, "test", gameTime, true);
-
-            //TODO: Clicking on tank will draw properties of this tank
-            //Renderer.Bar2D.Draw(barEnemy, Enemy.FuzzyEnemyWeight, "Enemy:"+Enemy.FuzzyEnemyWeight.ToString("N2"), gameTime, currentlySelectedWeight == 0);
-            //Renderer.Bar2D.Draw(barPrey, Enemy.FuzzyPreyWeight, "Prey:" + Enemy.FuzzyPreyWeight.ToString("N2"), gameTime, currentlySelectedWeight == 1);
-            //Renderer.Bar2D.Draw(barHealth, Enemy.FuzzyHealthWeight, "Health:" + Enemy.FuzzyHealthWeight.ToString("N2"), gameTime, currentlySelectedWeight == 2);
-
-            if (Enemy.SelectedTankParameters != null)
-            {   
-                int i = 0;
-                foreach(KeyValuePair<string,float> kvp in Enemy.SelectedTankParameters)
+                //Draw Unit Info if Selected
+                Enemy selected = Enemy.GetSelectedUnit();
+                if (selected != null)
                 {
-                    spriteBatch.DrawString(hudFont, "" + kvp.Key + " : " + kvp.Value.ToString("N2"), new Vector2(25, 380 + i * 35), Color.White);
-                    i += 1;
+                    Renderer.Bar2D.Draw(_barEnemy,
+                                        selected.FuzzyBrain.FuzzyEnemyWeight,
+                                        "Enemy:" + selected.FuzzyBrain.FuzzyEnemyWeight.ToString("N2"),
+                                        gameTime,
+                                        _currentlySelectedWeight == 0);
+
+                    Renderer.Bar2D.Draw(_barPrey,
+                                        selected.FuzzyBrain.FuzzyPreyWeight,
+                                        "Prey:" + selected.FuzzyBrain.FuzzyPreyWeight.ToString("N2"),
+                                        gameTime,
+                                        _currentlySelectedWeight == 1);
+
+                    Renderer.Bar2D.Draw(_barHealth,
+                                        selected.FuzzyBrain.FuzzyHealthWeight,
+                                        "Health:" + selected.FuzzyBrain.FuzzyHealthWeight.ToString("N2"),
+                                        gameTime,
+                                        _currentlySelectedWeight == 2);
+                    if (selected.FuzzyBrain.fuzzyParameters != null)
+                    {
+                        Dictionary<string, float>.Enumerator enumerator = selected.FuzzyBrain.fuzzyParameters.GetEnumerator();
+                        for (int i = 0; i < selected.FuzzyBrain.fuzzyParameters.Count; i += 1)
+                        {
+                            enumerator.MoveNext();
+                            var kvp = enumerator.Current;
+                            _spriteBatch.DrawString(_hudFont
+                                                    , "" + kvp.Key + " : " + kvp.Value.ToString("N2")
+                                                    , new Vector2(25, 380 + i*35)
+                                                    , Color.White
+                                );
+                        }
+                    }
                 }
-             }
+            }
 
-            spriteBatch.End();
-
+            _spriteBatch.End();
             base.Draw(gameTime);
-
-            frameCounter.Update(gameTime);
+            _frameCounter.Update(gameTime);
         }
+        #endregion
 
         public void HandleInput(GamePadState currentGamePadState,
-            KeyboardState currentKeyboardState, HeightMapInfo heightMapInfo)
+                                KeyboardState currentKeyboardState, HeightMapInfo heightMapInfo)
         {
-
-            
             float changeAmount = 0;
-            
-            if (inputHelper.IsKeyJustPressed(Keys.Up))
+
+            if (_inputHelper.IsKeyJustPressed(Keys.Up))
             {
-                currentlySelectedWeight--;
-                if (currentlySelectedWeight < 0)
-                    currentlySelectedWeight = 2;
+                _currentlySelectedWeight--;
+                if (_currentlySelectedWeight < 0)
+                    _currentlySelectedWeight = 2;
             }
 
-            if (inputHelper.IsKeyJustPressed(Keys.Down))
+            if (_inputHelper.IsKeyJustPressed(Keys.Down))
             {
-                currentlySelectedWeight = (currentlySelectedWeight + 1) % 3;
+                _currentlySelectedWeight = (_currentlySelectedWeight + 1)%3;
             }
 
             MouseState touchState = Mouse.GetState();
             if (touchState.LeftButton == ButtonState.Pressed)
             {
-                Enemy chosenEnemy = ChooseEnemy(camera.Projection, camera.View, touchState);
+                ChooseEnemy(_camera.Projection, _camera.View, touchState);
             }
             // Interpert touch screen presses - get only the first one for this specific case
-            if (touchState.LeftButton == ButtonState.Pressed && isDragging == false)
+            if (touchState.LeftButton == ButtonState.Pressed && _isDragging == false)
             {
-
                 // Save first touch coordinates
-                lastTouchPoint = new Vector2(touchState.X, touchState.Y);
+                _lastTouchPoint = new Vector2(touchState.X, touchState.Y);
 
-                isDragging = true;
 
                 // Create a rectangle for the touch point
-                Rectangle touch = new Rectangle((int)lastTouchPoint.X, (int)lastTouchPoint.Y, 20, 20);
-
+                var touch = new Rectangle((int) _lastTouchPoint.X, (int) _lastTouchPoint.Y, 20, 20);
+                _isDragging = true;
                 // Check for collision with the bars
-                if (barEnemy.Intersects(touch))
-                    currentlySelectedWeight = 0;
-                else if (barPrey.Intersects(touch))
-                    currentlySelectedWeight = 1;
-                else if (barHealth.Intersects(touch))
-                    currentlySelectedWeight = 2;
+                if (_barEnemy.Intersects(touch))
+                    _currentlySelectedWeight = 0;
+                else if (_barPrey.Intersects(touch))
+                    _currentlySelectedWeight = 1;
+                else if (_barHealth.Intersects(touch))
+                    _currentlySelectedWeight = 2;
+                else
+                    _isDragging = false;
 
                 changeAmount = 0;
-                
             }
             else if (touchState.LeftButton == ButtonState.Released)
             {
                 // Make coordinates irrelevant
-                if (isDragging)
+                if (_isDragging)
                 {
-                    lastTouchPoint.X = -1;
-                    lastTouchPoint.Y = -1;
-                    isDragging = false;
+                    _lastTouchPoint.X = -1;
+                    _lastTouchPoint.Y = -1;
+                    _isDragging = false;
                 }
             }
-            else if (isDragging == true)
+            else if (_isDragging)
             {
-                if (isDragging && currentlySelectedWeight > -1)
+                if (_isDragging && _currentlySelectedWeight > -1)
                 {
-                    float DragDelta = touchState.X - lastTouchPoint.X;
+                    float dragDelta = touchState.X - _lastTouchPoint.X;
 
-                    if (DragDelta > 0.01)
+                    if (dragDelta > 0.01)
                         changeAmount = 1;
-                    else if (DragDelta < -0.01)
+                    else if (dragDelta < -0.01)
                         changeAmount = -1.0f;
                 }
             }
@@ -272,64 +227,67 @@ namespace TanksOnAHeightmap
             changeAmount *= .025f;
 
             // Apply to the changeAmount to the currentlySelectedWeight
-            switch (currentlySelectedWeight)
+            Enemy selected = Enemy.GetSelectedUnit();
+            if (selected != null)
             {
-                case 0:
-                    //Enemy.FuzzyEnemyWeight += changeAmount;
-                    break;
-                case 1:
-                    //Enemy.FuzzyPreyWeight += changeAmount;
-                    break;
-                case 2:
-                    //Enemy.FuzzyHealthWeight += changeAmount;
-                    break;
-                default:
-                    break;
+                switch (_currentlySelectedWeight)
+                {
+                    case 0:
+                        selected.FuzzyBrain.FuzzyEnemyWeight += changeAmount;
+                        break;
+                    case 1:
+                        selected.FuzzyBrain.FuzzyPreyWeight += changeAmount;
+                        break;
+                    case 2:
+                        selected.FuzzyBrain.FuzzyHealthWeight += changeAmount;
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
-        private Enemy ChooseEnemy(Matrix projectction, Matrix view, MouseState state)
+        //TODO: Move to Enemy class And separate into 2 methods
+        private void ChooseEnemy(Matrix projectction, Matrix view, MouseState state)
         {
             int mouseX = state.X;
             int mouseY = state.Y;
 
-            Vector3 nearsource = new Vector3((float)mouseX, (float)mouseY, 0f);
-            Vector3 farsource = new Vector3((float)mouseX, (float)mouseY, 1f);
+            var nearsource = new Vector3(mouseX, mouseY, 0f);
+            var farsource = new Vector3(mouseX, mouseY, 1f);
 
             Matrix world = Matrix.CreateTranslation(0, 0, 0);
 
             Vector3 nearPoint = GraphicsDevice.Viewport.Unproject(nearsource, projectction, view, world);
-            
+
             Vector3 farPoint = GraphicsDevice.Viewport.Unproject(farsource, projectction, view, world);
 
             // Create a ray from the near clip plane to the far clip plane.
             Vector3 direction = farPoint - nearPoint;
             direction.Normalize();
-            Ray pickRay = new Ray(nearPoint, direction);
+            var pickRay = new Ray(nearPoint, direction);
 
 
-            int selectedIndex;
             float selectedDistance = float.MaxValue;
             Enemy chosen = null;
-            for(int i = 0; i < Enemy.Units.Length; i += 1 )
+            for (int i = 0; i < Enemy.Units.Length; i += 1)
             {
                 BoundingSphere sphere = Enemy.Units[i].tank.BoundingSphere;
                 sphere.Center = Enemy.Units[i].Transformation.Translation;
-                Nullable<float> result = pickRay.Intersects(sphere);
+                float? result = pickRay.Intersects(sphere);
                 if (result.HasValue)
                 {
                     if (result.Value < selectedDistance)
                     {
-                        selectedIndex = i;
                         selectedDistance = result.Value;
                         chosen = Enemy.Units[i];
                         Enemy.Select(i);
                     }
                 }
-
-
             }
-            return chosen;
+
+            if( chosen == null)
+                Enemy.ClearSelection();
         }
     }
 }

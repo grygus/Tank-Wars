@@ -228,6 +228,7 @@ namespace TanksOnAHeightmap
                 //badGuys[i].DrawOrder = 102;
                 Components.Add(badGuys[i]);
             }
+
             Enemy.Units = badGuys;
             Enemy.DEBUG_ENEMY = true;
             player.EnemyList = badGuys;
@@ -569,6 +570,10 @@ namespace TanksOnAHeightmap
                 Exit();
             }
 
+            if (inputHelper.IsKeyJustPressed(Keys.P))
+            {
+                Enemy.UseFuzzy = true;
+            }
 
             if (inputHelper.IsKeyJustPressed(Keys.L))
             {

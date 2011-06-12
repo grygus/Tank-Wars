@@ -202,6 +202,9 @@ namespace TanksOnAHeightmap.GameLogic
                 needUpdateCollision = true;
             }
 
+            if (boundingSphere.Center != Transformation.Translation)
+                needUpdateCollision = true;
+
             if (boost)
                 emiter.Update(time, tank.Position);
 
@@ -329,7 +332,7 @@ namespace TanksOnAHeightmap.GameLogic
 
             // Update bounding sphere
             boundingSphere = tank.BoundingSphere;
-            boundingSphere.Center += Transformation.Translation;
+            boundingSphere.Center = Transformation.Translation;
 
             needUpdateCollision = false;
         }

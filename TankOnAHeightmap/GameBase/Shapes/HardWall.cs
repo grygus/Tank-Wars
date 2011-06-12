@@ -167,6 +167,7 @@ namespace TanksOnAHeightmap
             {
                 block.Tag = this;
             }
+
         }
 
         static HardWall()
@@ -180,6 +181,7 @@ namespace TanksOnAHeightmap
         /// <param name="gameTime">Time since last frame.</param>
         public override void Draw(GameTime gameTime)
         {
+            base.Draw(gameTime);
             foreach (Box block in blocks)
             {
                 Matrix scaling = Matrix.CreateScale(0.025f);
@@ -210,7 +212,7 @@ namespace TanksOnAHeightmap
                 }
 
             }
-            base.Draw(gameTime);
+            
         }
 
         /// <summary>
