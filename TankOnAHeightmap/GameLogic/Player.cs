@@ -223,7 +223,7 @@ namespace TanksOnAHeightmap.GameLogic
             if (currentKeyboardState.IsKeyDown(Keys.M))
             {
                 if (enemyList[0] != null)
-                {
+                {   
                     float radians = MathHelper.ToDegrees(enemyList[0].FuzzyBrain.DecideDirection(tank.WorldMatrix,
                         enemyList[0].Transformation.Translation, enemyList[0].healthManager.Health.Position, WorldTrees[0].Position));
                     if (radians < 0)
