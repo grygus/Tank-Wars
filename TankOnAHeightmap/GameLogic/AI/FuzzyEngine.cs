@@ -17,8 +17,22 @@ namespace TanksOnAHeightmap.GameLogic.AI
             FuzzyParameters.Add("aggression", 0.0f);
         }
 
+        public float Danger
+        {
+            get { return danger; }
+        }
         float danger      = 50.0f;
+
+        public float PrayPrior
+        {
+            get { return prayPrior; }
+        }
         float prayPrior   = 1.0f;
+
+        public float HealthPrior
+        {
+            get { return healthPrior; }
+        }
         float healthPrior = 1.0f;
 
         public float FuzzyEnemyWeight
@@ -463,7 +477,7 @@ namespace TanksOnAHeightmap.GameLogic.AI
         #endregion
         #region FuzzyDecision
         
-        float FuzzyAttackDecision(float value, float value2)
+        public float FuzzyAttackDecision(float value, float value2)
         {
             List<float> myHealth = new List<float>();
             myHealth.Add(FuzzyReverseGrade(value, 0, 50)); //ND

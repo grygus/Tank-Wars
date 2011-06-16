@@ -2,16 +2,18 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
+using TanksOnAHeightmap.GameBase;
 using TanksOnAHeightmap.GameBase.Cameras;
 using TanksOnAHeightmap.GameBase.Effects;
 using TanksOnAHeightmap.GameBase.Effects.ParticleSystems;
 using TanksOnAHeightmap.GameBase.Physics;
 using TanksOnAHeightmap.GameBase.Shapes;
+using TanksOnAHeightmap.GameLogic.AI.FuSM;
 using TanksOnAHeightmap.Helpers.Drawing;
 
 namespace TanksOnAHeightmap.GameLogic
 {
-    public class TerrainUnit : DrawableGameComponent
+    public class TerrainUnit : GameObject
     {
         public const float TankTurnSpeed = .025f;
         public static float MIN_GRAVITY = -1.5f;
@@ -20,6 +22,7 @@ namespace TanksOnAHeightmap.GameLogic
         private readonly ParticleEmitter emiter;
         private readonly ParticleSystem part1;
         protected bool boost;
+        public bool playerFlag;
 
         private BoundingBox boundingBox;
         private BoundingSphere boundingSphere;
@@ -31,12 +34,13 @@ namespace TanksOnAHeightmap.GameLogic
         public Tank tank;
         protected Terrain terrain;
         private Color boundingColor;
+        public HealthManager healthManager;
 
         #region AI
 
         public static float DETECTION_DISTANCE = -80.0f;
         private BoundingBox _detectionBox;
-        private Trees closesdObstacle;
+        private GameObject closesdObstacle;
         public float detectionDistance;
         public float minDetectionDistance = -120.0f;
 
@@ -73,13 +77,29 @@ namespace TanksOnAHeightmap.GameLogic
 
         #endregion
 
+
+        #region FuzzyStateMachine
+
+        public FuSMAIControl FuzzyControl;
+
+
+        #endregion
+
+
         #region World
 
         public Trees[] WorldTrees { set; get; }
+        public List<TerrainUnit> Oponents;
 
         #endregion
 
         #region Properties
+
+        public override Vector3 Position
+        {
+            get { return tank.Position; }
+            set { tank.Position = Position; }
+        }
 
         public int Life { get; set; }
 
@@ -110,7 +130,7 @@ namespace TanksOnAHeightmap.GameLogic
             }
         }
 
-        public BoundingBox BoundingBox
+        public override BoundingBox BoundingBox
         {
             get
             {
@@ -143,18 +163,24 @@ namespace TanksOnAHeightmap.GameLogic
         public TerrainUnit(Game game)
             : base(game)
         {
+            Oponents = new List<TerrainUnit>();
+            FuzzyControl = new FuSMAIControl(this);
+            tank = new Tank(game,this);
         }
 
         public TerrainUnit(Game game, ContentManager content, GraphicsDeviceManager graphics)
             : base(game)
         {
+            FuzzyControl = new FuSMAIControl(this);
+
+
             GravityVelocity = 0.0f;
             IsOnTerrain = false;
             IsDead = false;
             needUpdateCollision = true;
             boost = false;
             boundingColor = Color.Black;
-            tank = new Tank(game, content, graphics);
+            tank = new Tank(game, content, graphics,this);
 
             part1 = new DustParticleSystem(game, content);
             part1.Initialize();
@@ -266,11 +292,7 @@ namespace TanksOnAHeightmap.GameLogic
             tank.Draw(time);
             part1.SetCamera(camera.View, camera.Projection);
             part1.Draw(time);
-
             
-
-            
-
             if (DEBUG_MODE)
             {
                 Renderer.BoundingBox3D.Draw(DetectionBox, Color.Black, tank.WorldMatrix);
@@ -299,6 +321,8 @@ namespace TanksOnAHeightmap.GameLogic
                     Renderer.Line3D.Draw(tank.Position + new Vector3(0, 50, 0),
                                          tank.Position + detectVec + new Vector3(0, 50, 0), Color.Blue, null);
             }
+
+            Renderer.BoundingBox3D.Draw(BoundingBox, Color.Black, null);
         }
 
         public virtual void ReceiveDamage(int damageValue)
@@ -320,16 +344,20 @@ namespace TanksOnAHeightmap.GameLogic
                 isHit = false;
             }*/
         }
-
+        //TODO: Detect why BoundingBox do not rotate properly
         private void UpdateCollision()
         {
             // Do not support scale
 
             // Update bounding box
             boundingBox = tank.BoundingBox;
+            //boundingBox.Min = Vector3.Transform(boundingBox.Max, tank.WorldMatrix);
+            //boundingBox.Max = Vector3.Transform(tmp, tank.WorldMatrix);
+            
             boundingBox.Min += Transformation.Translation;
             boundingBox.Max += Transformation.Translation;
 
+            
             // Update bounding sphere
             boundingSphere = tank.BoundingSphere;
             boundingSphere.Center = Transformation.Translation;
@@ -442,7 +470,7 @@ namespace TanksOnAHeightmap.GameLogic
 
         public Vector3 FindObstacles()
         {
-            var nearTrees = new List<Trees>();
+            var nearTrees = new List<GameObject>();
             foreach (Trees tree in WorldTrees)
             {
                 if ((tree.Position - Transformation.Translation).Length() < Math.Abs(DetectionBox.Min.Z))
@@ -451,15 +479,24 @@ namespace TanksOnAHeightmap.GameLogic
                     nearTrees.Add(tree);
                 }
             }
+
+            foreach (TerrainUnit unit in Oponents)
+            {
+                if ((unit.Position - Transformation.Translation).Length() < Math.Abs(DetectionBox.Min.Z))
+                {
+                    nearTrees.Add(unit);
+                }
+            }
+
             return FindNextObstacle(nearTrees);
         }
 
-        public Vector3 FindNextObstacle(List<Trees> nearTrees)
+        public Vector3 FindNextObstacle(List<GameObject> nearTrees)
         {
             Matrix inverseTransformation = Matrix.Invert(tank.WorldMatrix);
             var localPosition = new Vector3[nearTrees.Count];
             int i = -1;
-            foreach (Trees tree in nearTrees)
+            foreach (GameObject tree in nearTrees)
             {
                 i += 1;
                 localPosition[i] = Vector3.Transform(tree.Position, inverseTransformation);
@@ -562,6 +599,35 @@ namespace TanksOnAHeightmap.GameLogic
 
         #endregion
 
+        #region
+
+        public Vector3 FuzzySteeringForce = Vector3.Zero;
+        public float FuzzyMaxSteeringForce = 5;
+
+        public bool FuzzyAccumulateForce(Vector3 force)
+        {
+            float magnitudeSoFar = FuzzySteeringForce.Length();
+            float magnitudeRemaining = FuzzyMaxSteeringForce - magnitudeSoFar;
+            if (magnitudeRemaining <= 0.0) return false;
+
+            float magnitudeToAdd = force.Length();
+
+            if (magnitudeToAdd < magnitudeRemaining)
+            {
+
+                FuzzySteeringForce += force;
+            }
+            else
+            {
+                //add it to the steering force
+                FuzzySteeringForce += Vector3.Normalize(force) * magnitudeRemaining;
+            }
+
+            return true;
+        }
+
+        #endregion
+
         /*     public bool TankCollision()
              {
                  //bounding sphere for this tank
@@ -578,5 +644,11 @@ namespace TanksOnAHeightmap.GameLogic
                  tank.BoundingSphere.Intersects(ref Microsoft.Xna.Framework.BoundingSphere sphere, result);
                  return result;
              }*/
+
+        public void ShootAt(float newDir)
+        {
+            if (Math.Abs(newDir) > 0.2)
+                tank.ShootAt = newDir;
+        }
     }
 }

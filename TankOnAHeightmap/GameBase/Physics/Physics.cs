@@ -139,12 +139,8 @@ namespace TanksOnAHeightmap.GameBase.Physics
             oldBarn.BlockModel = Content.Load<Model>("Models/street-lamppost");
             Components.Add(oldBarn);*/
 
+            healthManager.AddRandomHealth();
 
-
-
-            healthManager.Health = new Health(game, space, new Vector3(-100, 0, -170));
-            Components.Add(healthManager.Health);
-            healthManager.Health.DrawOrder = 102;
             // Border
            Model BorderCube;
            BorderCube = Content.Load<Model>("Models/border");

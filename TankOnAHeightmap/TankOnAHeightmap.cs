@@ -66,8 +66,8 @@ namespace TanksOnAHeightmap
         // Random number generator for the fire effect.
         Random random = new Random();
 
-        const int NUMBER_OF_ENEMYS = 2;
-        const int NUMBER_OF_TREES = 1;
+        const int NUMBER_OF_ENEMYS = 8;
+        const int NUMBER_OF_TREES = 4;
         #endregion
 
         #region Fields
@@ -205,14 +205,16 @@ namespace TanksOnAHeightmap
             player = new Player(this, Content, graphics, UnitTypes.PlayerType.TankPlayer);
             player.tank.setPosition(player.tank.Orientation.Translation + new Vector3(300, 0, 150));
             player.WorldTrees = trees;
+            
             #region  Constructor Physic
             space = new Space();
             EnemyCannonBall.EnemyCannonBallCollisionGroup = new CollisionGroup();
             Enemy.EnemyTankCollisionGroup = new CollisionGroup();
             Physic = new Physics(this, player, Content, terrain, space);
             player.phisics = Physic;
+            
             #endregion
-
+            player.healthManager = Physic.healthManager;
             Vector3 temp;
             Components.Add(terrain);
             for (int i = 0; i < badGuys.Length; i++)

@@ -69,7 +69,7 @@ namespace TanksOnAHeightmap
 
                 (Game as TanksOnAHeightmapGame).Physic.CannonBallManager.AddCannonBall(Vector3.Transform(tank.cannonBone.Transform.Translation+tank.turretBone.Transform.Translation,
                                                                                                         tank.WorldMatrix),
-                                                                                        1000 * Vector3.Transform(tank.cannonBone.Transform.Forward+tank.turretBone.Transform.Forward,
+                                                                                        1000 * Vector3.Transform(tank.turretBone.Transform.Forward + new Vector3(0,tank.cannonBone.Transform.Forward.Y,0),
                                                                                                         tank.Orientation));
                 
             }

@@ -103,41 +103,79 @@ namespace TanksOnAHeightmap
                 DrawHud();
 
                 //Draw Unit Info if Selected
-                Enemy selected = Enemy.GetSelectedUnit();
-                if (selected != null)
+                if (!showPlayerStatus)
+                {
+                    Enemy selected = Enemy.GetSelectedUnit();
+                    if (selected != null)
+                    {
+                        Renderer.Bar2D.Draw(_barEnemy,
+                                            selected.FuzzyBrain.FuzzyEnemyWeight,
+                                            "Enemy:" + selected.FuzzyBrain.FuzzyEnemyWeight.ToString("N2"),
+                                            gameTime,
+                                            _currentlySelectedWeight == 0);
+
+                        Renderer.Bar2D.Draw(_barPrey,
+                                            selected.FuzzyBrain.FuzzyPreyWeight,
+                                            "Prey:" + selected.FuzzyBrain.FuzzyPreyWeight.ToString("N2"),
+                                            gameTime,
+                                            _currentlySelectedWeight == 1);
+
+                        Renderer.Bar2D.Draw(_barHealth,
+                                            selected.FuzzyBrain.FuzzyHealthWeight,
+                                            "Health:" + selected.FuzzyBrain.FuzzyHealthWeight.ToString("N2"),
+                                            gameTime,
+                                            _currentlySelectedWeight == 2);
+                        if (selected.FuzzyBrain.fuzzyParameters != null)
+                        {
+                            Dictionary<string, float>.Enumerator enumerator = selected.FuzzyBrain.fuzzyParameters.GetEnumerator();
+                            for (int i = 0; i < selected.FuzzyBrain.fuzzyParameters.Count; i += 1)
+                            {
+                                enumerator.MoveNext();
+                                var kvp = enumerator.Current;
+                                _spriteBatch.DrawString(_hudFont
+                                                        , "" + kvp.Key + " : " + kvp.Value.ToString("N2")
+                                                        , new Vector2(25, 380 + i * 35)
+                                                        , Color.White
+                                    );
+                            }
+                        }
+                    }
+                }
+                else
                 {
                     Renderer.Bar2D.Draw(_barEnemy,
-                                        selected.FuzzyBrain.FuzzyEnemyWeight,
-                                        "Enemy:" + selected.FuzzyBrain.FuzzyEnemyWeight.ToString("N2"),
-                                        gameTime,
-                                        _currentlySelectedWeight == 0);
+                                            _player.FuzzyControl.FuzzyDecision.FuzzyEnemyWeight,
+                                            "Enemy:" + _player.FuzzyControl.FuzzyDecision.FuzzyEnemyWeight.ToString("N2"),
+                                            gameTime,
+                                            _currentlySelectedWeight == 0);
 
                     Renderer.Bar2D.Draw(_barPrey,
-                                        selected.FuzzyBrain.FuzzyPreyWeight,
-                                        "Prey:" + selected.FuzzyBrain.FuzzyPreyWeight.ToString("N2"),
+                                        _player.FuzzyControl.FuzzyDecision.FuzzyPreyWeight,
+                                        "Prey:" + _player.FuzzyControl.FuzzyDecision.FuzzyPreyWeight.ToString("N2"),
                                         gameTime,
                                         _currentlySelectedWeight == 1);
 
                     Renderer.Bar2D.Draw(_barHealth,
-                                        selected.FuzzyBrain.FuzzyHealthWeight,
-                                        "Health:" + selected.FuzzyBrain.FuzzyHealthWeight.ToString("N2"),
+                                        _player.FuzzyControl.FuzzyDecision.FuzzyHealthWeight,
+                                        "Health:" + _player.FuzzyControl.FuzzyDecision.FuzzyHealthWeight.ToString("N2"),
                                         gameTime,
                                         _currentlySelectedWeight == 2);
-                    if (selected.FuzzyBrain.fuzzyParameters != null)
+                    if (_player.FuzzyControl.FuzzyDecision.fuzzyParameters != null)
                     {
-                        Dictionary<string, float>.Enumerator enumerator = selected.FuzzyBrain.fuzzyParameters.GetEnumerator();
-                        for (int i = 0; i < selected.FuzzyBrain.fuzzyParameters.Count; i += 1)
+                        Dictionary<string, float>.Enumerator enumerator = _player.FuzzyControl.FuzzyDecision.fuzzyParameters.GetEnumerator();
+                        for (int i = 0; i < _player.FuzzyControl.FuzzyDecision.fuzzyParameters.Count; i += 1)
                         {
                             enumerator.MoveNext();
                             var kvp = enumerator.Current;
                             _spriteBatch.DrawString(_hudFont
                                                     , "" + kvp.Key + " : " + kvp.Value.ToString("N2")
-                                                    , new Vector2(25, 380 + i*35)
+                                                    , new Vector2(25, 380 + i * 35)
                                                     , Color.White
                                 );
                         }
                     }
                 }
+                
             }
 
             _spriteBatch.End();
@@ -146,6 +184,7 @@ namespace TanksOnAHeightmap
         }
         #endregion
 
+        private bool showPlayerStatus;
         public void HandleInput(GamePadState currentGamePadState,
                                 KeyboardState currentKeyboardState, HeightMapInfo heightMapInfo)
         {
@@ -227,24 +266,50 @@ namespace TanksOnAHeightmap
             changeAmount *= .025f;
 
             // Apply to the changeAmount to the currentlySelectedWeight
-            Enemy selected = Enemy.GetSelectedUnit();
-            if (selected != null)
+            if (_inputHelper.IsKeyJustPressed(Keys.Space))
             {
+                showPlayerStatus = !showPlayerStatus;
+            }
+
+            if(!showPlayerStatus)
+            {
+                Enemy selected = Enemy.GetSelectedUnit();
+                if (selected != null)
+                {
+                    switch (_currentlySelectedWeight)
+                    {
+                        case 0:
+                            selected.FuzzyBrain.FuzzyEnemyWeight += changeAmount;
+                            break;
+                        case 1:
+                            selected.FuzzyBrain.FuzzyPreyWeight += changeAmount;
+                            break;
+                        case 2:
+                            selected.FuzzyBrain.FuzzyHealthWeight += changeAmount;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+            else
+            {   Enemy.ClearSelection();
                 switch (_currentlySelectedWeight)
                 {
                     case 0:
-                        selected.FuzzyBrain.FuzzyEnemyWeight += changeAmount;
+                        _player.FuzzyControl.FuzzyDecision.FuzzyEnemyWeight += changeAmount;
                         break;
                     case 1:
-                        selected.FuzzyBrain.FuzzyPreyWeight += changeAmount;
+                        _player.FuzzyControl.FuzzyDecision.FuzzyPreyWeight += changeAmount;
                         break;
                     case 2:
-                        selected.FuzzyBrain.FuzzyHealthWeight += changeAmount;
+                        _player.FuzzyControl.FuzzyDecision.FuzzyHealthWeight += changeAmount;
                         break;
                     default:
                         break;
                 }
             }
+             
         }
 
         //TODO: Move to Enemy class And separate into 2 methods

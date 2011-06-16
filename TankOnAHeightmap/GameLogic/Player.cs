@@ -87,6 +87,7 @@ namespace TanksOnAHeightmap.GameLogic
 			set
 			{
 				enemyList = value;
+				Oponents = new List<TerrainUnit>(EnemyList);
 			}
 		}
 
@@ -102,6 +103,7 @@ namespace TanksOnAHeightmap.GameLogic
 			}
 		}
 
+		private bool fuzzyAI;
 		#endregion
 
 		public Player(Game game, ContentManager content, GraphicsDeviceManager graphics, UnitTypes.PlayerType playerType)
@@ -115,6 +117,7 @@ namespace TanksOnAHeightmap.GameLogic
 			start = 0;
 			//tank.Velocity = 3;
 			Velocity = 3;
+			playerFlag = true;
 		}
 
 		protected override void LoadContent()
@@ -138,7 +141,7 @@ namespace TanksOnAHeightmap.GameLogic
 		public void HandleInput(GamePadState currentGamePadState,
 			KeyboardState currentKeyboardState, HeightMapInfo heightMapInfo)
 		{
-            
+			
 			// First, we want to check to see if the tank should turn. turnAmount will 
 			// be an accumulation of all the different possible inputs.
 			float turnAmount = -currentGamePadState.ThumbSticks.Left.X;
@@ -220,34 +223,41 @@ namespace TanksOnAHeightmap.GameLogic
 			{
 				shot = false;
 			}*/
-            if (currentKeyboardState.IsKeyDown(Keys.M))
-            {
-                if (enemyList[0] != null)
-                {   
-                    float radians = MathHelper.ToDegrees(enemyList[0].FuzzyBrain.DecideDirection(tank.WorldMatrix,
-                        enemyList[0].Transformation.Translation, enemyList[0].healthManager.Health.Position, WorldTrees[0].Position));
-                    if (radians < 0)
-                        radians = -180 - radians;
-                    else if(radians > 0)
-                        radians = 180 - radians;
+			if (currentKeyboardState.IsKeyDown(Keys.M))
+			{
+				if (enemyList[0] != null)
+				{   
+					float radians = MathHelper.ToDegrees(enemyList[0].FuzzyBrain.DecideDirection(tank.WorldMatrix,
+						enemyList[0].Transformation.Translation, enemyList[0].healthManager.GetNearestHealthPosition(Transformation.Translation), WorldTrees[0].Position));
+					if (radians < 0)
+						radians = -180 - radians;
+					else if(radians > 0)
+						radians = 180 - radians;
 
 
-                    Matrix rot = Matrix.CreateRotationY(MathHelper.ToRadians(-radians));
-                    
-                    tank.Move(MathHelper.ToRadians(-radians),new Vector3(0,0,-1),heightMapInfo);
-                    
+					Matrix rot = Matrix.CreateRotationY(MathHelper.ToRadians(-radians));
+					
+					tank.Move(MathHelper.ToRadians(-radians),new Vector3(0,0,-1),heightMapInfo);
 
-                }
-            }
-            else
-            {
-                MovePlayer(currentGamePadState, currentKeyboardState, heightMapInfo);
-            }
+					fuzzyAI = false;
+				}
+			}
+			else if (currentKeyboardState.IsKeyDown(Keys.N))
+			{
+				
+				fuzzyAI = true;
+			}
+			else
+			{
+				fuzzyAI = false;
+				tank.SteeringForce = Vector3.Zero;
+				MovePlayer(currentGamePadState, currentKeyboardState, heightMapInfo);
+			}
 			//tank.Move(facingDirection, movement, heightMapInfo,SteeringForce);
 			
 		}
 
-	    
+		
 
 		public override void Update(GameTime time)
 		{
@@ -256,7 +266,7 @@ namespace TanksOnAHeightmap.GameLogic
 			//System.Console.WriteLine(Life);
 
 			UpdateTarget();
-			FindObstacles();
+			//FindObstacles();
 			//tank.SteeringForce = WallAvoidance();
 			if (enemyCollision)
 			{
@@ -268,6 +278,25 @@ namespace TanksOnAHeightmap.GameLogic
 				start = 0;
 				tank.Velocity = -tank.Velocity;
 			}
+
+			if (fuzzyAI)
+			{
+				FuzzyControl.Update(0.0f);
+				tank.movement.Z = -1;
+				FuzzySteeringForce.Normalize();
+
+				/*if (Vector3.Dot(tank.WorldMatrix.Forward, FuzzySteeringForce) < 0 &&
+					Math.Abs(Vector3.Dot(tank.WorldMatrix.Right, FuzzySteeringForce)) < 0.1)
+					tank.movement.Z = 1;*/ //! Slow changing direction if angle is 180 degree
+
+				FuzzySteeringForce *= elapsedTimeSeconds * 100;
+
+
+
+				tank.SteeringForce = FuzzySteeringForce;
+			}
+			
+			
 			tank.Update(time);
 			base.Update(time);
 
@@ -333,6 +362,7 @@ namespace TanksOnAHeightmap.GameLogic
 													);*/
 
 			
+			
 			Renderer.BoundingSphere3D.DrawCircle(new BoundingSphere(new Vector3(0, 0, 0), 1200),
 													Color.Blue,
 													Transformation * Matrix.CreateTranslation(new Vector3(0, 25, 0)));
@@ -344,15 +374,16 @@ namespace TanksOnAHeightmap.GameLogic
 			if (enemyList[0] != null)
 			{ 
 				float radians = MathHelper.ToDegrees(enemyList[0].FuzzyBrain.DecideDirection(tank.WorldMatrix,
-					enemyList[0].Transformation.Translation,enemyList[0].healthManager.Health.Position,WorldTrees[0].Position));
+					enemyList[0].Transformation.Translation,enemyList[0].healthManager.GetNearestHealthPosition(Transformation.Translation),WorldTrees[0].Position));
 				if (radians < 0)
 					radians = -180 - radians;
 				else
 					radians = 180 - radians;
 			
 
-			Matrix rot = Matrix.CreateRotationY(MathHelper.ToRadians(-radians));
-			Renderer.Line3D.Draw(new Vector3(0,50,0), new Vector3(0, 50, -200), Color.Red,rot*tank.WorldMatrix);
+			//Matrix rot = Matrix.CreateRotationY(MathHelper.ToRadians(-radians));
+			//Renderer.Line3D.Draw(new Vector3(0,50,0), new Vector3(0, 50, -200), Color.Red,rot*tank.WorldMatrix);
+				Renderer.Line3D.Draw(new Vector3(0, 50, 0) + Transformation.Translation ,new Vector3(0,50,0)+ Transformation.Translation +FuzzySteeringForce * 100, Color.Black,null);
 			}
 			
 		}
@@ -560,7 +591,7 @@ namespace TanksOnAHeightmap.GameLogic
 
 				//tank.wheelRollMatrix *= Matrix.CreateRotationX(theta * rollDirection);
 				tank.cannonMoveMatrix *= Matrix.CreateRotationX((tank.CannonRotate - newCannonRotate));
-				tank.turretMoveMatrix *= Matrix.CreateRotationY((tank.TurretRotate - newTurretRotate));
+				//tank.turretMoveMatrix *= Matrix.CreateRotationY((tank.TurretRotate - newTurretRotate));
 				tank.steerRotationMatrix *= Matrix.CreateRotationY(tank.SteerRotationValue - newSteerRotationValue);
 
 				// once we've finished all computations, we can set our position to the

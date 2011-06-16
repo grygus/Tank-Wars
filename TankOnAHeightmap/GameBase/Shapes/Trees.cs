@@ -11,7 +11,7 @@ using TanksOnAHeightmap.Helpers.Drawing;
 
 namespace TanksOnAHeightmap.GameBase.Shapes
 {
-    public class Trees : DrawableGameComponent
+    public class Trees : GameObject
     {
 
         public static float TREE_SCALE = 0.1f;
@@ -24,21 +24,15 @@ namespace TanksOnAHeightmap.GameBase.Shapes
         protected ChaseCamera camera;
         protected ContentManager content;
         protected GraphicsDeviceManager graphics;
-        public Transformation Transformation
-        {
-            get { return transformation; }
-
-        }
-        protected Transformation transformation;
         protected BoundingBox boundingBox;
         public BoundingSphere BoundingSphere
         {
             get
             {
-                return tree.TrunkMesh.BoundingSphere;
+                return tree.TrunkMesh.BoundingSphere; 
             }
         }
-        public BoundingBox BoundingBox
+        public override BoundingBox BoundingBox
         {
             get
             {
@@ -46,15 +40,15 @@ namespace TanksOnAHeightmap.GameBase.Shapes
                 return boundingBox;
             }
         }
-        public Vector3 Position
+        public override Vector3 Position
         {
-            get { return transformation.Translate; }
+            get { return Transformation.Translate; }
             set 
             {
-                transformation.Translate = value;
+                Transformation.Translate = value;
                 boundingBox = BoundingBox.CreateFromSphere(BoundingSphere);
                 Matrix mat = Matrix.CreateScale(0.1f, 1, 0.1f);
-                mat *= transformation.Matrix;
+                mat *= Transformation.Matrix;
                 boundingBox.Min = Vector3.Transform(boundingBox.Min, mat);
                 boundingBox.Max = Vector3.Transform(boundingBox.Max, mat);
             
@@ -70,8 +64,8 @@ namespace TanksOnAHeightmap.GameBase.Shapes
             terrain = Game.Services.GetService(typeof(Terrain)) as Terrain;
             this.graphics = graphics;
 
-            transformation = new Transformation();
-            transformation.Scale = new Vector3(TREE_SCALE);
+            Transformation = new Transformation();
+            Transformation.Scale = new Vector3(TREE_SCALE);
 
             
 
@@ -107,7 +101,7 @@ namespace TanksOnAHeightmap.GameBase.Shapes
             //mat *= transformation.Matrix;
             //BoundingSphere sphere = new BoundingSphere(Transformation.Translate,20);
             //if (frustum.Intersects(sphere))
-                    tree.DrawTrunk(transformation.Matrix, camera.View, camera.Projection);
+                    tree.DrawTrunk(Transformation.Matrix, camera.View, camera.Projection);
 
 
 

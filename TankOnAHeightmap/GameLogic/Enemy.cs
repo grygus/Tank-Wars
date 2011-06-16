@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using BEPUphysics;
 using BEPUphysics.DataStructures;
 using BEPUphysics.Entities;
@@ -49,7 +50,7 @@ namespace TanksOnAHeightmap.GameLogic
 
 
         private float fuzzyActionTime;
-        public HealthManager healthManager;
+        
         // Wander
 
         // Attack
@@ -165,7 +166,17 @@ namespace TanksOnAHeightmap.GameLogic
 
         public Player Player
         {
-            set { player = value; }
+            set 
+            { 
+                player = value;
+                if(Oponents != null)
+                    Oponents.Add(player);
+                else
+                {
+                    Oponents = new List<TerrainUnit>();
+                    Oponents.Add(player);
+                }
+            }
         }
 
 
@@ -351,6 +362,7 @@ namespace TanksOnAHeightmap.GameLogic
             if (IsDead)
             {
                 game.Components.Remove(this);
+                player.Oponents.Remove(this);
             }
 
             EnemyCannon.Update(time);
@@ -370,7 +382,7 @@ namespace TanksOnAHeightmap.GameLogic
             if (UseFuzzy)
             {
                 float direction = FuzzyBrain.DecideDirection(tank.WorldMatrix, player.Transformation.Translation,
-                                           healthManager.Health.Position, WorldTrees[0].Position);
+                                           healthManager.GetNearestHealthPosition(Transformation.Translation), WorldTrees[0].Position);
 
 
             }
@@ -532,7 +544,7 @@ namespace TanksOnAHeightmap.GameLogic
 
             float radians = MathHelper.ToDegrees(FuzzyBrain.DecideDirection(tank.WorldMatrix,
                                                                             player.Transformation.Translation,
-                                                                            healthManager.Health.Position,
+                                                                            healthManager.GetNearestHealthPosition(Transformation.Translation),
                                                                             WorldTrees[0].Position));
             if (radians < 0)
                 radians = -180 - radians;
@@ -653,5 +665,7 @@ namespace TanksOnAHeightmap.GameLogic
         }
 
         #endregion
+
+        
     }
 }

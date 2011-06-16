@@ -25,8 +25,8 @@ namespace TanksOnAHeightmap
 
         public Vector3 Position
         {
-            get { return position; }
-            set { position = value; }
+            get { return body.CenterPosition; }
+            //set { position = value; }
         }
         private Vector3 position;
 
@@ -112,7 +112,6 @@ namespace TanksOnAHeightmap
             : base(game)
         {
             this.space = space;
-            this.position = position;
             this.game = game;
             body = new Sphere(position, 15, 5);
             body.Tag = this;
@@ -174,7 +173,7 @@ namespace TanksOnAHeightmap
                  {
                      isAlive = false;
                      space.Remove(body);
-                     game.Components.Remove(this);
+                     
                  }
                  base.Update(gameTime);
         }
@@ -205,7 +204,7 @@ namespace TanksOnAHeightmap
                     space.Remove(body);
                     game.Components.Remove(this);
                     Random rand = new Random(0);
-                     ;
+                     IsAlive = false;
                      enemy2.Life = Math.Min(100, enemy2.Life + (int)((float)rand.NextDouble() * 30f + 20f) );
                  }                
             }
@@ -217,6 +216,7 @@ namespace TanksOnAHeightmap
                     space.Remove(body);  
                     game.Components.Remove(this);
                     Random rand = new Random(0);
+                    IsAlive = false;
                     enemy3.Life = Math.Min(150, enemy3.Life + Math.Min(150, enemy3.Life + (int)((float)rand.NextDouble() * 30f + 30f)));
                 }
             }                    

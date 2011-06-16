@@ -14,6 +14,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Input;
 using TanksOnAHeightmap.GameBase.Shapes;
+using TanksOnAHeightmap.GameLogic;
 using TanksOnAHeightmap.Helpers.Drawing;
 #endregion
 
@@ -115,6 +116,14 @@ namespace TanksOnAHeightmap
             get { return worldMatrix; }
         }
         Matrix worldMatrix;
+        
+        public Vector3 ShootingDirection
+        {
+            get { return Vector3.Transform(turretBone.Transform.Forward,Orientation); }
+            
+        }
+
+        public float ShootAt;
         //The amount of rotate on the turret of the tank
         public float TurretRotate
         {
@@ -195,13 +204,29 @@ namespace TanksOnAHeightmap
         Terrain terrain;
         HeightMapInfo heightMapInfo;
         Game game;
-        public Tank(Game game, ContentManager content, GraphicsDeviceManager graphics)
+        private TerrainUnit _parent;
+
+        public Tank(Game game, TerrainUnit parent)
+            : base(game)
+        {
+            this.game = game;
+            this.TankVelocity = 2000;
+            this._parent = parent;
+            movement = new Vector3(0, 0, 0);
+            terrain = game.Services.GetService(typeof(Terrain)) as Terrain;
+            velocity = Vector3.Zero;
+            isRotating = false;
+            isEnemy = false;
+        }
+
+        public Tank(Game game, ContentManager content, GraphicsDeviceManager graphics,TerrainUnit parent)
             : base(game)
         {
             this.game = game;
             this.content = content;
             this.graphics = graphics;
             this.TankVelocity = 2000;
+            this._parent = parent;
             movement = new Vector3(0, 0, 0);
             terrain = game.Services.GetService(typeof(Terrain)) as Terrain;
             velocity = Vector3.Zero;
@@ -341,9 +366,11 @@ namespace TanksOnAHeightmap
 
                 wheelRollMatrix *= Matrix.CreateRotationX(theta * rollDirection);
 
+                
                 // once we've finished all computations, we can set our position to the
                 // new position that we calculated.
                 position = newPosition;
+                worldMatrix = orientation * Matrix.CreateTranslation(Position);
             }
         }
 
@@ -379,11 +406,11 @@ namespace TanksOnAHeightmap
             //if (steeringForce != null && (Vector3)steeringForce != Vector3.Zero)
             //   steeringForce = Vector3.Transform((Vector3)steeringForce, orientation * 
             //                                        Matrix.CreateTranslation(position));
-
-            if (movement.Z == 0)
-                movement.X = 0;
-            else
-                movement.X *= 0.03f;
+            if(!_parent.playerFlag)
+                if (movement.Z == 0)
+                    movement.X = 0;
+                else
+                    movement.X *= 0.03f;
 
             //Vector3 velocity;
             Vector3 final_velocity = Vector3.Transform(movement, Orientation);
@@ -574,6 +601,25 @@ namespace TanksOnAHeightmap
         public override void Update(GameTime gameTime)
         {
                 Move(gameTime);
+                float elapsedTimeSeconds = (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (Math.Abs(ShootAt) > 0.05)
+                {
+                    float amountToMove = elapsedTimeSeconds;
+
+                    if (ShootAt < 0)
+                    {
+                        amountToMove *= -1;
+                        amountToMove = MathHelper.Clamp(amountToMove, ShootAt, 0);
+                    }
+                    else if (ShootAt > 0)
+                    {
+                        amountToMove = MathHelper.Clamp(amountToMove, 0, ShootAt);
+                    }
+
+                    turretMoveMatrix *= Matrix.CreateRotationY(amountToMove);
+
+                    ShootAt -= amountToMove;
+                }
           
         }
 
