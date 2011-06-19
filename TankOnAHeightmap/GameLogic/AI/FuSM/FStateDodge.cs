@@ -19,7 +19,10 @@ namespace TanksOnAHeightmap.GameLogic.AI.FuSM
 
         public override float CalculateActivation()
         {
-            return 1;
+            if (_parent.closestEnemy == null)
+                return 0;
+            else
+                return 1;
         }
 
         public override void Update(float dt)
@@ -34,7 +37,7 @@ namespace TanksOnAHeightmap.GameLogic.AI.FuSM
             foreach (var attackingEnemy in attackingEnemies)
             {
                 Vector3 directionToPlayer = _parent._unit.Transformation.Translation - attackingEnemy.Transformation.Translation;
-                directionToPlayer.Normalize();
+                
                 if (directionToPlayer.Length() < 500)
                 {
                     float angle = FuSMAIControl.GetSignedAngle3D(directionToPlayer, enemyShootingDirection, attackingEnemy.tank.WorldMatrix.Right);
@@ -45,12 +48,16 @@ namespace TanksOnAHeightmap.GameLogic.AI.FuSM
                         _activationLevel = (absDegreeAngle - dangerAngle) / (-dangerAngle);
                     }
 
-                    Vector3 dodgeForce = (angle < 5) ? attackingEnemy.tank.WorldMatrix.Left : attackingEnemy.tank.WorldMatrix.Right;
+                    Vector3 dodgeForce = (MathHelper.ToDegrees(angle) < 5) ? attackingEnemy.tank.WorldMatrix.Left : attackingEnemy.tank.WorldMatrix.Right;
                     finalForce += dodgeForce * _activationLevel;
                 }
             }
 
-            _parent._unit.FuzzyAccumulateForce(finalForce);
+            if(finalForce != Vector3.Zero)
+                finalForce.Normalize();
+
+
+            _parent._unit.FuzzyAccumulateForce(finalForce, "Dodge");
 
         }
     }

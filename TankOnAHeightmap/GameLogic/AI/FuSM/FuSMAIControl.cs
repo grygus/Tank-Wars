@@ -11,7 +11,7 @@ namespace TanksOnAHeightmap.GameLogic.AI.FuSM
         private FuSMMachine _machine;
         private FuSMMovementMachine _movementMachine;
         public TerrainUnit _unit;
-
+        private readonly int AttackingDistance = 500;
         #region Helpers
 
         public static float GetUnsignedAngle3D(Vector3 FromVector, Vector3 DestVector)
@@ -92,6 +92,7 @@ namespace TanksOnAHeightmap.GameLogic.AI.FuSM
             _movementMachine.AddState(new FStateApproach(0, this));
             //_movementMachine.AddState(new FStateEvade(0, this));
             _movementMachine.AddState(new FStateGetPowerUp(0, this));
+            _movementMachine.AddState(new FStateDefendPray(0, this));
 
             _machine = new FuSMMachine(0, this);
             _machine.AddState(new FStateAttack(0, this));
@@ -111,7 +112,11 @@ namespace TanksOnAHeightmap.GameLogic.AI.FuSM
             }
 
             UpdatePerceptions(dt);
-            FuzzyDecision.UpdateParameters(_unit.Life,EnemyHealth);
+            if (closestEnemy != null)
+               FuzzyDecision.UpdateParameters(_unit.Life,EnemyHealth,_unit.Prey.Life);
+            else
+                FuzzyDecision.UpdateParameters(_unit.Life, _unit.Prey.Life);
+
             _machine.UpdateMachine(dt);
         }
 
@@ -124,18 +129,31 @@ namespace TanksOnAHeightmap.GameLogic.AI.FuSM
             PrayPosition = _unit.WorldTrees[0].Position;
             HealthPosition = _unit.healthManager.GetNearestHealthPosition(_unit.Transformation.Translation);
             //ClosesObstacle = _unit.FindObstacles();
-            closestEnemy = GetNearestEnemy(_unit.Oponents);
-            ClosestEnemyPosition = closestEnemy.Transformation.Translation;
-            EnemyHealth = closestEnemy.Life;
-            enemyWorld = closestEnemy.tank.WorldMatrix;
-            enemyVelocity = enemyWorld.Forward;
-            enemyBoundingBox = closestEnemy.tank.BoundingBox;
+            Vector3 vecToPray = _unit.Prey.Position - _unit.Position;
+            if (vecToPray.Length() <= 500)
+            {
+                closestEnemy = GetEnemyInDangerZone(_unit.Oponents);
+            }
+            else
+            {
+                closestEnemy = GetNearestEnemy(_unit.Oponents);
+            }
+
+            if (closestEnemy != null)
+            {
+                ClosestEnemyPosition = closestEnemy.Transformation.Translation;
+                EnemyHealth = closestEnemy.Life;
+                enemyWorld = closestEnemy.tank.WorldMatrix;
+                enemyVelocity = enemyWorld.Forward;
+                enemyBoundingBox = closestEnemy.tank.BoundingBox;
+            }
+            
 
         }
 
         private TerrainUnit GetNearestEnemy(List<TerrainUnit> enemies)
         {
-            float distance = float.MaxValue;
+            float distance = AttackingDistance;
             float tmpDistance;
             TerrainUnit nearest = null;
             foreach (var terrainUnit in enemies)
@@ -148,6 +166,20 @@ namespace TanksOnAHeightmap.GameLogic.AI.FuSM
                 }
             }
             return nearest;
+        }
+
+        private TerrainUnit GetEnemyInDangerZone(List<TerrainUnit> enemies)
+        {
+            float tmpDistance;
+            foreach (TerrainUnit terrainUnit in enemies)
+            {
+                tmpDistance = Vector3.Distance(_unit.Prey.Position, terrainUnit.Transformation.Translation);
+                if (tmpDistance < 500)
+                {
+                    return terrainUnit;
+                }
+            }
+            return null;
         }
 
         public List<TerrainUnit> GetAttackingEnemy(List<TerrainUnit> enemies)

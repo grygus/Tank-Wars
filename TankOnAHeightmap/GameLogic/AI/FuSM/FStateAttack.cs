@@ -17,7 +17,10 @@ namespace TanksOnAHeightmap.GameLogic.AI.FuSM
 
         public override float CalculateActivation()
         {
-            return 1;
+            if (_parent.closestEnemy == null)
+                return 0;
+            else
+                return 1;
         }
 
         public override void Update(float dt)

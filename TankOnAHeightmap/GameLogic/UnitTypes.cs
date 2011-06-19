@@ -30,9 +30,9 @@ namespace TanksOnAHeightmap.GameLogic
         {
             TankEnemy
         }
-        public static int[] EnemyLife = { 100 };
+        public static int[] EnemyLife = { 20 };
         public static float[] EnemySpeed = { 1.0f };
-        public static int[] EnemyPerceptionDistance = { 220 };
+        public static int[] EnemyPerceptionDistance = { 700 };
         public static int[] EnemyAttackDistance = { 500 }; // 80
         public static int[] EnemyAttackDamage = { 8 };
     }

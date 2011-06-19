@@ -5,17 +5,18 @@ using Microsoft.Xna.Framework.Graphics;
 using BEPUphysics;
 using BEPUphysics.Entities;
 using BEPUphysics.DataStructures;
+using TanksOnAHeightmap.GameBase;
 
 namespace TanksOnAHeightmap
 {
     /// <summary>
     /// Castle wall defending the cannon.
     /// </summary>
-    public class Building : DrawableGameComponent
+    public class Building : GameObject
     {
         #region Properties
 
-        public Vector3 Position
+        public override Vector3 Position
         {
             get { return position; }
             set { position = value; }
@@ -23,7 +24,7 @@ namespace TanksOnAHeightmap
         private Vector3 position;
 
 
-        public BoundingBox BoundingBox  
+        public override BoundingBox BoundingBox  
         {
             get { return entity.BoundingBox; }
         }
@@ -50,6 +51,8 @@ namespace TanksOnAHeightmap
         public Model model;
 
         private float scale;
+        private string _resources;
+
         /// <summary>
         /// The graphical model used to draw the enemy.
         /// </summary>
@@ -92,12 +95,16 @@ namespace TanksOnAHeightmap
         /// <param name="wallLength">Total length of the wall.</param>
         /// <param name="wallHeight">Total height of the wall.</param>
         /// <param name="blockThickness">Thickness of the wall.</param>
-        public Building(Game game, Space space,  Vector3 position, Entity entity, float scale)
+
+        
+
+        public Building(Game game, Space space,  Vector3 position, Entity entity, float scale, string resources)
             : base(game)
         {
             Space = space;
             this.position = position;
             this.scale = scale;
+            _resources = resources;
 
             this.entity = entity;
             entity.CenterPosition += position;
@@ -114,6 +121,10 @@ namespace TanksOnAHeightmap
 
         }
 
+        protected override void LoadContent()
+        {
+            BlockModel = Game.Content.Load<Model>(_resources);
+        }
         /// <summary>
         /// Draws the wall.
         /// </summary>

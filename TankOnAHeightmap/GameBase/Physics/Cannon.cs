@@ -62,7 +62,7 @@ namespace TanksOnAHeightmap
             if (timeSinceLastFire >= TimeBetweenShots)// && initialVelocity.X != -9999)
             {                
                 timeSinceLastFire -= TimeBetweenShots;                
-                fire.Play();
+                //fire.Play();
                // MediaPlayer.Play(fire);
                 //SoundEffect.
                 //MediaPlayer.Volume = 0.5f;

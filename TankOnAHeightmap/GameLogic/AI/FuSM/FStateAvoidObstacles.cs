@@ -22,7 +22,7 @@ namespace TanksOnAHeightmap.GameLogic.AI.FuSM
         {
             base.Update(dt);
 
-            _parent._unit.FuzzyAccumulateForce(_parent._unit.FindObstacles());
+            _parent._unit.FuzzyAccumulateForce(_parent._unit.FindObstacles(), "AvoidObstacles");
 
 
         }

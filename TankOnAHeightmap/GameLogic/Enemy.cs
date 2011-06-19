@@ -20,6 +20,7 @@ namespace TanksOnAHeightmap.GameLogic
             Wander = 0,
             ChasePlayer,
             AttackPlayer,
+            AttackPrey,
             //Dead
         }
 
@@ -102,9 +103,9 @@ namespace TanksOnAHeightmap.GameLogic
             MaxSteeringForce = 1000;
             WanderOn = true;
             ObstacleAvoidOn = true;
-            ChasingOn = false;
+            ChasingPlayerOn = false;
             wallAvoidanceOn = true;
-            Turn = false;
+            TurnToPlayer = false;
 
             FuzzyBrain = new FuzzyEngine();
         }
@@ -135,9 +136,11 @@ namespace TanksOnAHeightmap.GameLogic
 
         public bool ObstacleAvoidOn { get; set; }
 
-        public bool ChasingOn { get; set; }
+        public bool ChasingPlayerOn { get; set; }
+        public bool ChasingPreyOn { get; set; }
+        public bool TurnToPlayer { get; set; }
+        public bool TurnToPrey { get; set; }
 
-        public bool Turn { get; set; }
 
         public bool WallAvoidanceOn
         {
@@ -329,6 +332,33 @@ namespace TanksOnAHeightmap.GameLogic
             Move(chaseVector);
         }
 
+        private void AttackPrey(GameTime time)
+        {
+            var elapsedTimeSeconds = (float)time.TotalGameTime.TotalSeconds;
+            if (elapsedTimeSeconds > nextActionTime)
+            {
+                var ray = new Ray(tank.Position, tank.ForwardVector);
+                Microsoft.Xna.Framework.BoundingSphere sphere = new BoundingSphere(Prey.Position,150);
+                
+                //float? distance = Prey.BoundingBox.Intersects(ray);
+                float? distance = sphere.Intersects(ray);
+                if (distance != null)
+                {
+                    //player.ReceiveDamage(attackDamage, this.tank.Orientation.Forward);
+                    EnemyCannon.Fire();
+                    if (TurnToPrey)
+                        TurnToPrey = false;
+                }
+                else
+                {
+                    if (!TurnToPrey)
+                        TurnToPrey = true;
+                }
+
+                nextActionTime = elapsedTimeSeconds + ATTACK_DELAY_SECONDS;
+            }
+        }
+
         private void AttackPlayer(GameTime time)
         {
             //ChasePlayer(time);
@@ -342,13 +372,13 @@ namespace TanksOnAHeightmap.GameLogic
                 {
                     //player.ReceiveDamage(attackDamage, this.tank.Orientation.Forward);
                     EnemyCannon.Fire();
-                    if (Turn)
-                        Turn = false;
+                    if (TurnToPlayer)
+                        TurnToPlayer = false;
                 }
                 else
                 {
-                    if (!Turn)
-                        Turn = true;
+                    if (!TurnToPlayer)
+                        TurnToPlayer = true;
                 }
 
                 nextActionTime = elapsedTimeSeconds + ATTACK_DELAY_SECONDS;
@@ -391,7 +421,7 @@ namespace TanksOnAHeightmap.GameLogic
                 //
                 chaseVector = player.tank.Position - tank.Position;
                 float distanceToPlayer = chaseVector.Length();
-
+                float distanceToPray = (Prey.Position - Position).Length();
                 // Normalize chase vector
                 //chaseVector *= (1.0f / distanceToPlayer);
                 tank.movement.Z = -1;
@@ -402,6 +432,10 @@ namespace TanksOnAHeightmap.GameLogic
                         {
                             state = EnemyState.ChasePlayer;
                             WanderOn = false;
+                        }
+                        else if ( distanceToPray < 500)
+                        {
+                            state = EnemyState.AttackPrey;
                         }
                         else
                         {
@@ -418,7 +452,17 @@ namespace TanksOnAHeightmap.GameLogic
                         break;
 
                     case EnemyState.ChasePlayer:
-                        if (distanceToPlayer <= attackDistance)
+                        if (distanceToPlayer > perceptionDistance)
+                        {
+                            state = EnemyState.Wander;
+                            if (ChasingPlayerOn)
+                            {
+                                ChasingPlayerOn = false;
+                                WanderOn = true;
+                            }
+
+                        }
+                        else if (distanceToPlayer <= attackDistance)
                         {
                             // Change state
                             state = EnemyState.AttackPlayer;
@@ -430,9 +474,9 @@ namespace TanksOnAHeightmap.GameLogic
                             //Move(tank.SteeringForce);
                             //else
                             //ChasePlayer(time);
-                            if (!ChasingOn)
+                            if (!ChasingPlayerOn)
                             {
-                                ChasingOn = true;
+                                ChasingPlayerOn = true;
                                 WanderOn = false;
                             }
                             if (!wallAvoidanceOn)
@@ -441,6 +485,11 @@ namespace TanksOnAHeightmap.GameLogic
                         break;
 
                     case EnemyState.AttackPlayer:
+                        if (ChasingPreyOn)
+                            ChasingPreyOn = false;
+                        if (TurnToPrey)
+                            TurnToPrey = false;
+
                         if (distanceToPlayer > attackDistance * 1.5f)
                             // Change state
                             state = EnemyState.ChasePlayer;
@@ -448,21 +497,21 @@ namespace TanksOnAHeightmap.GameLogic
                         {
                             if (distanceToPlayer < 100)
                             {
-                                if (ChasingOn)
-                                    ChasingOn = false;
+                                if (ChasingPlayerOn)
+                                    ChasingPlayerOn = false;
 
-                                if (!Turn)
-                                    Turn = true;
+                                if (!TurnToPlayer)
+                                    TurnToPlayer = true;
 
                                 tank.movement.Z = 0;
                             }
                             else
                             {
-                                if (!ChasingOn)
-                                    ChasingOn = true;
+                                if (!ChasingPlayerOn)
+                                    ChasingPlayerOn = true;
 
-                                if (Turn)
-                                    Turn = false;
+                                if (TurnToPlayer)
+                                    TurnToPlayer = false;
                             }
                             if (wallAvoidanceOn)
                                 wallAvoidanceOn = false;
@@ -473,6 +522,42 @@ namespace TanksOnAHeightmap.GameLogic
                         }
                         break;
 
+                    case EnemyState.AttackPrey:
+                        if (ChasingPlayerOn)
+                            ChasingPlayerOn = false;
+                        if (TurnToPlayer)
+                            TurnToPlayer = false;
+
+                        if (isHited && distanceToPlayer < attackDistance)
+                        {
+                            state = EnemyState.AttackPlayer;
+                        }
+                        else
+                        {
+                            if (distanceToPray < 200)
+                            {
+                                if (!TurnToPrey)
+                                    TurnToPrey = true;
+
+                                tank.movement.Z = 0;
+                            }
+                            else
+                            {
+                                if (!ChasingPreyOn)
+                                    ChasingPreyOn = true;
+
+                                if (TurnToPrey)
+                                    TurnToPrey = false;
+                            }
+                            if (wallAvoidanceOn)
+                                wallAvoidanceOn = false;
+
+                            if (WanderOn)
+                                WanderOn = false;
+                            AttackPrey(time);
+                        }
+
+                        break;
                     default:
                         break;
                 }
@@ -481,7 +566,7 @@ namespace TanksOnAHeightmap.GameLogic
                                                  (tank.Position.Y + 30 - tank_box.CenterPosition.Y) * 16,
                                                  (tank.Position.Z - tank_box.CenterPosition.Z) * 16);
                 tank_box.OrientationMatrix = tank.Orientation;
-                if (distanceToPlayer > 100)
+                if (distanceToPlayer > 100 && distanceToPray > 200)
                 {
                     tank.setPosition(tank_box.CenterPosition);
                 }
@@ -498,6 +583,7 @@ namespace TanksOnAHeightmap.GameLogic
             Visible = BoundingSphere.Intersects(frustum) ? true : false;
 
             tank.Update(time);
+            isHited = false;
             base.Update(time);
         }
 
@@ -540,18 +626,20 @@ namespace TanksOnAHeightmap.GameLogic
                 //Renderer.BoundingSphere3D.Draw(BoundingSphere,Color.Black,Transformation);
                 Renderer.BoundingSphere3D.Draw(tank.BoundingSphere, Color.Black,
                                                Transformation*Matrix.CreateTranslation(new Vector3(0, 25, 0)));
-            }
 
-            float radians = MathHelper.ToDegrees(FuzzyBrain.DecideDirection(tank.WorldMatrix,
+                float radians = MathHelper.ToDegrees(FuzzyBrain.DecideDirection(tank.WorldMatrix,
                                                                             player.Transformation.Translation,
                                                                             healthManager.GetNearestHealthPosition(Transformation.Translation),
                                                                             WorldTrees[0].Position));
-            if (radians < 0)
-                radians = -180 - radians;
-            else
-                radians = 180 - radians;
-            Matrix rot = Matrix.CreateRotationY(MathHelper.ToRadians(-radians));
-            Renderer.Line3D.Draw(new Vector3(0, 50, 0), new Vector3(0, 50, -200), Color.Red, rot*tank.WorldMatrix);
+                if (radians < 0)
+                    radians = -180 - radians;
+                else
+                    radians = 180 - radians;
+                Matrix rot = Matrix.CreateRotationY(MathHelper.ToRadians(-radians));
+                Renderer.Line3D.Draw(new Vector3(0, 50, 0), new Vector3(0, 50, -200), Color.Red, rot * tank.WorldMatrix);
+            }
+
+            
         }
 
         #region EventPhysics
@@ -586,9 +674,9 @@ namespace TanksOnAHeightmap.GameLogic
 
         #region AI
 
-        private Vector3 Seek()
+        private Vector3 Seek(Vector3 goal)
         {
-            Vector3 DesiredVelocity = Vector3.Normalize(player.tank.Position - tank.Position);
+            Vector3 DesiredVelocity = Vector3.Normalize(goal - tank.Position);
             return 4*DesiredVelocity; //+tank.ForwardVector*40;//(DesiredVelocity - m_pVehicle->Velocity());
         }
 
@@ -597,9 +685,22 @@ namespace TanksOnAHeightmap.GameLogic
             Vector3 wanderForce = SteeringForce;
             SteeringForce = Vector3.Zero;
             Vector3 force;
-            if (Turn)
+            if (TurnToPlayer)
             {
                 force = Vector3.Normalize(player.tank.Position - tank.Position);
+
+                tank.isRotating = true;
+                //Matrix inverted = Matrix.Invert(tank.WorldMatrix);
+                //Vector3 invertedVec = Vector3.Transform(force, inverted);
+                //invertedVec.Z = 0;
+                //force = Vector3.Normalize(Vector3.Transform(invertedVec, tank.WorldMatrix));
+                //(DesiredVelocity - m_pVehicle->Velocity());
+
+                if (!AccumulateForce(force)) return SteeringForce;
+            }
+            else if (TurnToPrey)
+            {
+                force = Vector3.Normalize(Prey.Position - tank.Position);
 
                 tank.isRotating = true;
                 //Matrix inverted = Matrix.Invert(tank.WorldMatrix);
@@ -632,10 +733,14 @@ namespace TanksOnAHeightmap.GameLogic
                 force = wanderForce;
                 if (!AccumulateForce(force)) return SteeringForce;
             }
-
-            if (ChasingOn)
+            if (ChasingPreyOn)
             {
-                force = Seek();
+                force = Seek(Prey.Position);
+                if (!AccumulateForce(force)) return SteeringForce;
+            }
+            else if (ChasingPlayerOn)
+            {
+                force = Seek(player.Position);
                 if (!AccumulateForce(force)) return SteeringForce;
             }
 

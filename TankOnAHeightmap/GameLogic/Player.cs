@@ -281,8 +281,9 @@ namespace TanksOnAHeightmap.GameLogic
 
 			if (fuzzyAI)
 			{
+                Force.Clear();
 				FuzzyControl.Update(0.0f);
-				tank.movement.Z = -1;
+				tank.movement.Z = -1f;
 				FuzzySteeringForce.Normalize();
 
 				/*if (Vector3.Dot(tank.WorldMatrix.Forward, FuzzySteeringForce) < 0 &&

@@ -130,10 +130,6 @@ namespace TanksOnAHeightmap.GameBase.Physics
             }
            // Components.Add(new Wall(game, space, Matrix.Identity, Matrix.CreateTranslation(new Vector3(10, -350, -360)) * Matrix.CreateRotationY(1.57f), 5, 5, 121, 37, 10));
                                                     // Position                     // entity offset                 // entity size
-            Building church = new Building(game, space, new Vector3(-2100, -40, 250), new Box( new Vector3(-70, -210, 0), 685, 400, 365),15f);
-            church.BlockModel = Content.Load<Model>("Models/88cathedral");
-            church.DrawOrder = 102;
-            Components.Add(church);
             
             /*Building oldBarn = new Building(game, space, new Vector3(1840, -200, 2390), new Box(new Vector3(-70, -210, 0), 685, 400, 365),120f);
             oldBarn.BlockModel = Content.Load<Model>("Models/street-lamppost");

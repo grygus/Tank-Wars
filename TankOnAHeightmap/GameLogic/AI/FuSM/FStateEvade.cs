@@ -16,6 +16,9 @@ namespace TanksOnAHeightmap.GameLogic.AI.FuSM
 
         public override float CalculateActivation()
         {
+            if (_parent.closestEnemy == null)
+                return 0;
+
             _activationLevel = _parent.FuzzyDecision.Danger;
             _activationLevel /= 100;
             _activationLevel = 0.75f - _activationLevel;
@@ -32,7 +35,7 @@ namespace TanksOnAHeightmap.GameLogic.AI.FuSM
             if(brake.Length() < 500)
             {
                 brake.Normalize();
-                _parent._unit.FuzzyAccumulateForce(brake * _activationLevel);
+                _parent._unit.FuzzyAccumulateForce(brake * _activationLevel, "Evade");
             };
 
         }

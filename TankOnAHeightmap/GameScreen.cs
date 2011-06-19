@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -24,7 +25,7 @@ namespace TanksOnAHeightmap
         private int _currentlySelectedWeight;
         private FrameCounterHelper _frameCounter;
         private SpriteFont _hudFont;
-
+        private SpriteFont _consolasFont;
 
         private InputHelper _inputHelper;
         private bool _isDragging;
@@ -53,11 +54,11 @@ namespace TanksOnAHeightmap
         {
             // Create SpriteBatch and add services
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-
+            
             // Font 2D
             _spriteFont = Game.Content.Load<SpriteFont>(GameAssetsPath.FONTS_PATH + "BerlinSans");
             _hudFont = Game.Content.Load<SpriteFont>("hudFont");
-
+            _consolasFont = Game.Content.Load<SpriteFont>(GameAssetsPath.FONTS_PATH + "Consolas");
             base.LoadContent();
         }
 
@@ -174,13 +175,70 @@ namespace TanksOnAHeightmap
                                 );
                         }
                     }
+
+                    ShowForce(_player.Force.Description);
+                    ShowForceVectors(_player.Position,_player.Force.Vectors);
                 }
-                
             }
 
             _spriteBatch.End();
             base.Draw(gameTime);
             _frameCounter.Update(gameTime);
+        }
+
+        private Color[] colorTab = {
+                                       Color.Green, Color.Red, Color.Blue, Color.Pink, Color.Orange, Color.Violet,
+                                       Color.Cyan,Color.Olive,Color.Peru,Color.Salmon,Color.Brown,Color.Yellow
+                                   };
+        private void ShowForceVectors(Vector3 position,List<Vector3> vectors)
+        {
+            if (vectors.Count > 0)
+            {
+                for (int i = 0; i < vectors.Count; i++)
+                {
+                    Renderer.Line3D.Draw(position, position + vectors[i], colorTab[i]);
+                }
+            }
+        }
+
+        public void ShowForce(List<string> description)
+        {
+            Vector2 maxSize = Vector2.Zero;
+            Vector2 tmpSize;
+            int height = (int)_consolasFont.MeasureString("I").Y + _consolasFont.LineSpacing;
+
+            if (description.Count > 0)
+            {
+                foreach (string s in description)
+                {
+                    tmpSize = _consolasFont.MeasureString(s);
+                    if (tmpSize.X > maxSize.X)
+                    {
+                        maxSize.X = tmpSize.X;
+                    }
+                    maxSize.Y += tmpSize.Y + _consolasFont.LineSpacing;
+                }
+
+                Vector2 offset = new Vector2();
+                offset.X = GraphicsDevice.Viewport.Width - (int)maxSize.X;
+                offset.Y = GraphicsDevice.Viewport.Height - (int) maxSize.Y;
+
+                Texture2D onePixelWhite = new Texture2D(GraphicsDevice, 1, 1, false,SurfaceFormat.Color);
+                
+                Rectangle rec = new Rectangle((int)offset.X-10, (int)offset.Y-10, (int)maxSize.X+10, (int)maxSize.Y+10);
+
+                Color col = new Color(0.0f,0.0f,0.2f,0.8f);
+                onePixelWhite.SetData<Color>(new Color[] { col });
+
+                _spriteBatch.Draw(onePixelWhite, rec, col);
+
+                for (int i = 0; i < description.Count;i++ )
+                {
+                    string s = description[i];
+                    _spriteBatch.DrawString(_consolasFont, s, offset, colorTab[i]);
+                    offset.Y += height;
+                }
+            }
         }
         #endregion
 

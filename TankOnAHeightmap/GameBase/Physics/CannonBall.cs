@@ -29,6 +29,7 @@ using BEPUphysics.Entities;
 using BEPUphysics.ResourceManagement;
 using System;
 using BEPUphysics.DataStructures;
+using TanksOnAHeightmap.GameBase.Shapes;
 using TanksOnAHeightmap.GameLogic;
 using TanksOnAHeightmap.GameBase.Effects.ParticleSystems;
 using Microsoft.Xna.Framework.Audio;
@@ -120,6 +121,11 @@ namespace TanksOnAHeightmap
                     if (enemy != null)
                     {
                         // Terrain was hit!
+                    }
+                    var prey = e.Tag as Prey;
+                    if (prey != null)
+                    {
+                        prey.ReceiveDamage(5);
                     } 
                     var enemy2 = e.Tag as Player;
                     if (enemy2 != null)
@@ -130,20 +136,12 @@ namespace TanksOnAHeightmap
                     var enemy3 = e.Tag as Enemy;
                     if (enemy3 != null)
                     {
-                        //enemy3.Life -= 30;
-                        //enemy3.IsHited = true;
-                        //if (enemy3.Life < 1)
-                        //{
-                        //    enemy3.IsDead = true;
-                        //    Space.Remove(enemy3.Tank_box);
-                        //}
                         enemy3.ReceiveDamage(5);
                         enemy3.IsHited = true;
                         if (enemy3.IsDead)
                         {
                             Space.Remove(enemy3.Tank_box);
                         }
-                       // Console.WriteLine("Hit" + enemy3.Life);
                     
                     } // enemy was hit                       
 
@@ -168,7 +166,7 @@ namespace TanksOnAHeightmap
                 Explosion explosion = new Explosion(sender, 700, ExplosionRadius, Space, game);
                 explosion.Explode();
                 Manager.RemoveCannonBall(this);
-                blast.Play();
+                //blast.Play();
             }
         }
 

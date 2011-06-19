@@ -610,10 +610,16 @@ namespace TanksOnAHeightmap.GameLogic.AI
             return FuzzyReverseGrade(health, 0, 100) * 4;
         }
 
-        public void UpdateParameters(int unitLife,int enemyLife)
+        public void UpdateParameters(int unitLife,int enemyLife,int prayDamage = 100)
         {
             danger = FuzzyAttackDecision(unitLife, enemyLife);
-            prayPrior = FuzzyPrayDecision(100);
+            prayPrior = FuzzyPrayDecision(prayDamage);
+            healthPrior = FuzzyHealthDecision(unitLife);
+        }
+
+        public void UpdateParameters(int unitLife, int prayDamage = 100)
+        {
+            prayPrior = FuzzyPrayDecision(prayDamage);
             healthPrior = FuzzyHealthDecision(unitLife);
         }
         #endregion

@@ -16,6 +16,9 @@ namespace TanksOnAHeightmap.GameLogic.AI.FuSM
 
         public override float CalculateActivation()
         {
+            if (_parent.closestEnemy == null) 
+                return 0;
+
             _activationLevel = _parent.FuzzyDecision.Danger;
             _activationLevel /= 100;
             _activationLevel *= _parent.FuzzyDecision.FuzzyEnemyWeight;
@@ -29,7 +32,7 @@ namespace TanksOnAHeightmap.GameLogic.AI.FuSM
             Vector3 distance = _parent.ClosestEnemyPosition - _parent._unit.Transformation.Translation;
             CalculateActivation();
             distance.Normalize();
-            _parent._unit.FuzzyAccumulateForce(distance*_activationLevel);
+            _parent._unit.FuzzyAccumulateForce(distance,"Approach");
         }
 
         

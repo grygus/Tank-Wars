@@ -26,7 +26,7 @@ namespace TanksOnAHeightmap.GameLogic.AI.FuSM
 
             Vector3 distanceToPary = _parent.HealthPosition - _parent._unit.Transformation.Translation;
             distanceToPary.Normalize();
-            _parent._unit.FuzzyAccumulateForce(distanceToPary);
+            _parent._unit.FuzzyAccumulateForce(distanceToPary, "GetPowerUp");
             
         }
     }

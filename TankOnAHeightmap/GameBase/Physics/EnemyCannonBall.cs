@@ -29,6 +29,7 @@ using BEPUphysics.Entities;
 using BEPUphysics.ResourceManagement;
 using System;
 using BEPUphysics.DataStructures;
+using TanksOnAHeightmap.GameBase.Shapes;
 using TanksOnAHeightmap.GameLogic;
 using Microsoft.Xna.Framework.Audio;
 
@@ -118,6 +119,11 @@ namespace TanksOnAHeightmap
                     {
                         Manager.RemoveCannonBall(this);
                         // Terrain was hit!
+                    }
+                    var prey = e.Tag as Prey;
+                    if (prey != null)
+                    {
+                        prey.ReceiveDamage(5);
                     } 
                     var enemy2 = e.Tag as Player;
                     if (enemy2 != null)

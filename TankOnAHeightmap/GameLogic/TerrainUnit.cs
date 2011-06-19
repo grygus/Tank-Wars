@@ -15,6 +15,30 @@ namespace TanksOnAHeightmap.GameLogic
 {
     public class TerrainUnit : GameObject
     {
+        public class ForceFactors
+        {
+            public List<Vector3> Vectors;
+            public List<String> Description;
+
+            public ForceFactors()
+            {
+                Vectors = new List<Vector3>();
+                Description = new List<string>();
+            }
+
+            public void Clear()
+            {
+                Vectors.Clear();
+                Description.Clear();
+            }
+
+            public void Add(Vector3 vector, string description)
+            {
+                Vectors.Add(vector);
+                Description.Add(description);
+            }
+        }
+
         public const float TankTurnSpeed = .025f;
         public static float MIN_GRAVITY = -1.5f;
         public static float GRAVITY_ACCELERATION = 4.0f;
@@ -81,6 +105,7 @@ namespace TanksOnAHeightmap.GameLogic
         #region FuzzyStateMachine
 
         public FuSMAIControl FuzzyControl;
+        public ForceFactors Force { get; set; }
 
 
         #endregion
@@ -88,6 +113,8 @@ namespace TanksOnAHeightmap.GameLogic
 
         #region World
 
+        public Prey Prey;
+        public Building Church;
         public Trees[] WorldTrees { set; get; }
         public List<TerrainUnit> Oponents;
 
@@ -165,6 +192,7 @@ namespace TanksOnAHeightmap.GameLogic
         {
             Oponents = new List<TerrainUnit>();
             FuzzyControl = new FuSMAIControl(this);
+            Force = new ForceFactors();
             tank = new Tank(game,this);
         }
 
@@ -172,7 +200,7 @@ namespace TanksOnAHeightmap.GameLogic
             : base(game)
         {
             FuzzyControl = new FuSMAIControl(this);
-
+            Force = new ForceFactors();
 
             GravityVelocity = 0.0f;
             IsOnTerrain = false;
@@ -322,7 +350,7 @@ namespace TanksOnAHeightmap.GameLogic
                                          tank.Position + detectVec + new Vector3(0, 50, 0), Color.Blue, null);
             }
 
-            Renderer.BoundingBox3D.Draw(BoundingBox, Color.Black, null);
+            //Renderer.BoundingBox3D.Draw(BoundingBox, Color.Black, null);
         }
 
         public virtual void ReceiveDamage(int damageValue)
@@ -604,8 +632,10 @@ namespace TanksOnAHeightmap.GameLogic
         public Vector3 FuzzySteeringForce = Vector3.Zero;
         public float FuzzyMaxSteeringForce = 5;
 
-        public bool FuzzyAccumulateForce(Vector3 force)
+
+        public bool FuzzyAccumulateForce(Vector3 force,String description)
         {
+            
             float magnitudeSoFar = FuzzySteeringForce.Length();
             float magnitudeRemaining = FuzzyMaxSteeringForce - magnitudeSoFar;
             if (magnitudeRemaining <= 0.0) return false;
@@ -614,7 +644,6 @@ namespace TanksOnAHeightmap.GameLogic
 
             if (magnitudeToAdd < magnitudeRemaining)
             {
-
                 FuzzySteeringForce += force;
             }
             else
@@ -623,6 +652,7 @@ namespace TanksOnAHeightmap.GameLogic
                 FuzzySteeringForce += Vector3.Normalize(force) * magnitudeRemaining;
             }
 
+            Force.Add(force * 100, description + ": " + force.Length().ToString("N2"));
             return true;
         }
 

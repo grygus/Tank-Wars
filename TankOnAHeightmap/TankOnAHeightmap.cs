@@ -119,9 +119,10 @@ namespace TanksOnAHeightmap
             graphics = new GraphicsDeviceManager(this);
             device = GraphicsDevice;
             Content.RootDirectory = "Content";
-
+            
             music = Content.Load<Song>("Sound/windbell");
-
+            MediaPlayer.IsMuted = true;
+            
             // Light Manager
             lightManager = new LightManager();
             lightManager.AmbientLightColor = new Vector3(0.2f, 0.2f, 0.2f);
@@ -214,7 +215,37 @@ namespace TanksOnAHeightmap
             player.phisics = Physic;
             
             #endregion
+
+            //World Buildings
+            Building church = new Building(this, space
+                , new Vector3(-2100, -40, 250)
+                , new Box(new Vector3(-70, -210, 0), 685, 400, 365)
+                , 15f
+                , "Models/88cathedral"
+                );
+            //church.BlockModel = Content.Load<Model>("Models/88cathedral");
+            church.DrawOrder = 102;
+            Components.Add(church);
+
+            Prey eagle = new Prey(this, space
+                , new Vector3(-1200, -280, 300)
+                , new Box(new Vector3(0, 10, 0), 60, 120, 160)
+                , 2f
+                , "Models/eagle-adler"
+                );
+            /*HardWall eagle_legs = new HardWall(this, space
+                , Matrix.Identity
+                , Matrix.CreateTranslation(new Vector3(-1210, -350, 300))
+                , 1, 1, 50, 50, 65
+                );*/
+            //eagle.BlockModel = Content.Load<Model>("Models/eagle-adler");
+            eagle.DrawOrder = 102;
+            Components.Add(eagle);
+            //
             player.healthManager = Physic.healthManager;
+            player.Prey = eagle;
+            player.Church = church;
+
             Vector3 temp;
             Components.Add(terrain);
             for (int i = 0; i < badGuys.Length; i++)
@@ -227,12 +258,14 @@ namespace TanksOnAHeightmap
                 badGuys[i].WorldTrees = trees;
                 badGuys[i].phisics = Physic;
                 badGuys[i].healthManager = Physic.healthManager;
+                badGuys[i].Prey = eagle;
+                badGuys[i].Church = church;
                 //badGuys[i].DrawOrder = 102;
                 Components.Add(badGuys[i]);
             }
 
             Enemy.Units = badGuys;
-            Enemy.DEBUG_ENEMY = true;
+            //Enemy.DEBUG_ENEMY = true;
             player.EnemyList = badGuys;
 
 
@@ -593,7 +626,8 @@ namespace TanksOnAHeightmap
             }
             if (inputHelper.IsKeyJustPressed(Keys.J))
             {
-                //badGuys[0].DecideDirection();
+                //badGuys[0].DecideDirection();sdsdf
+                
             }
             player.HandleInput(currentGamePadState, currentKeyboardState, terrain.MapInfo);
             camera.HandleInput(currentGamePadState, currentKeyboardState, terrain.MapInfo);

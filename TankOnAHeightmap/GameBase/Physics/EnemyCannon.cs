@@ -69,7 +69,7 @@ namespace TanksOnAHeightmap
             if (timeSinceLastFire >= TimeBetweenShots)// && initialVelocity.X != -9999)
             {                
                 timeSinceLastFire -= TimeBetweenShots;
-                fire.Play();
+                //fire.Play();
                 enemy.EnemyCannonBallManager.AddCannonBall(enemy.tank.Position+Vector3.Transform(new Vector3(0,50,-50),tank.Orientation),
                                                            1000 *enemy.tank.ForwardVector);
                   
