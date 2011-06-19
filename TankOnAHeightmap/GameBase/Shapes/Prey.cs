@@ -61,7 +61,7 @@ namespace TanksOnAHeightmap.GameBase.Shapes
             Renderer.BoundingSphere3D.DrawCircle(new BoundingSphere(center, 503), Color.GreenYellow);
             Renderer.BoundingSphere3D.DrawCircle(new BoundingSphere(center, 504), Color.GreenYellow);
 
-            Renderer.BoundingBox3D.Draw(BoundingBox,Color.Red);
+            //Renderer.BoundingBox3D.Draw(BoundingBox,Color.Red);
         }
         
     }

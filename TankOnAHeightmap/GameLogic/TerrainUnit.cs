@@ -516,6 +516,17 @@ namespace TanksOnAHeightmap.GameLogic
                 }
             }
 
+            if ((Prey.Position - Transformation.Translation).Length() < Math.Abs(DetectionBox.Min.Z))
+            {
+                nearTrees.Add(Prey);
+            }
+
+            float churchSize = Vector3.Distance(Church.BoundingBox.Max, Church.BoundingBox.Min);
+            if ((Church.Position - Transformation.Translation).Length() < Math.Abs(DetectionBox.Min.Z) + churchSize / 2)
+            {
+                nearTrees.Add(Church);
+            }
+
             return FindNextObstacle(nearTrees);
         }
 

@@ -84,7 +84,14 @@ namespace TanksOnAHeightmap
             _spriteBatch.DrawString(_spriteFont
                                     , "FPS: " + _frameCounter.LastFrameFps
                                     , new Vector2(10, 75)
-                                    , Color.Red
+                                    , Color.Yellow
+                );
+
+
+            _spriteBatch.DrawString(_spriteFont
+                                    , "Prey Life: " + _player.Prey.Life
+                                    , new Vector2(10, 105)
+                                    , (_player.Prey.IsUnderAttack) ? Color.Red : Color.White
                 );
         }
 

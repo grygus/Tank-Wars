@@ -6,6 +6,7 @@ using BEPUphysics;
 using BEPUphysics.Entities;
 using BEPUphysics.DataStructures;
 using TanksOnAHeightmap.GameBase;
+using TanksOnAHeightmap.Helpers.Drawing;
 
 namespace TanksOnAHeightmap
 {
@@ -153,8 +154,9 @@ namespace TanksOnAHeightmap
                             effect.Projection = (Game as TanksOnAHeightmapGame).projectionMatrix;
                         }
                         mesh.Draw();
-                    }              
-         
+                    }
+
+            Renderer.BoundingBox3D.Draw(BoundingBox, Color.Red);
             base.Draw(gameTime);
         }
 
